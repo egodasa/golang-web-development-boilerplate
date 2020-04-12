@@ -1,67 +1,33 @@
 package models
 
+import (
+  "github.com/jinzhu/gorm"
+  _ "github.com/jinzhu/gorm/dialects/mysql"
+)
+
 type ModelMobil struct {
-  ID int `json:"id_mobil"`
-  Merk string `json:"merk"`
-  Tipe string `json:"tipe"`
-  Harga int `json:"harga"`
-  Warna []string `json:"warna"`
-  Penggerak string `json:"penggerak"`
-  BanyakRoda int `json:"banyak_roda"`
-  BanyakBangku int `json:"banyak_bangku"`
-  JenisMesin string `json:"jenis_mesin"`
-  Mesin string `json:"mesin"`
+  ID int `json:"id_mobil",gorm:"column:id_mobil;AUTO_INCREMENT;primary_key"`
+  KodeMobil string `json:"kode_mobil",gorm:"column:kode_mobil;type:varchar(10)"`
+  Merk string `json:"merk",gorm:"column:merk;type:varchar(50)"`
+  Tipe string `json:"tipe",gorm:"column:tipe;type:varchar(100)"`
+  Harga int `json:"harga",gorm:"column:harga;type:int(11)`
+  Warna string `json:"warna",gorm:"column:warna;type:varchar(20)"`
+  Penggerak string `json:"penggerak",gorm:"column:penggerak;type:varchar(4)"`
+  BanyakRoda int `json:"banyak_roda",gorm:"column:banyak_roda;type:int(11)"`
+  BanyakBangku int `json:"banyak_bangku",gorm:"column:banyak_bangku;type:int(11)"`
+  JenisMesin string `json:"jenis_mesin,gorm:"column:jenis_mesin;type:varchar(20)`
+  Mesin string `json:"mesin",gorm:"column:mesin;type:varchar(20)"`
 }
 
-var dataMobil = []ModelMobil {{
-    ID: 1,
-    Merk: "Toyota",
-    Tipe: "Kijang Innova Venturer",
-    Harga: 657000000,
-    Warna: []string{"Merah", "Hitam", "Putih", "Silver"},
-    Penggerak: "FR",
-    BanyakRoda: 4,
-    BanyakBangku: 6,
-    JenisMesin: "Diesel",
-    Mesin: "D4D",
-  },
-  {
-    ID: 2,
-    Merk: "Suzuki",
-    Tipe: "Ertiga GX",
-    Harga: 210000000,
-    Warna: []string{"Merah", "Hitam", "Putih", "Silver"},
-    Penggerak: "FF",
-    BanyakRoda: 4,
-    BanyakBangku: 7,
-    JenisMesin: "Bensin",
-    Mesin: "I4",
-  },
-  {
-    ID: 3,
-    Merk: "Suzuki",
-    Tipe: "Karimun Wagon R",
-    Harga: 108000000,
-    Warna: []string{"Merah", "Hitam", "Putih", "Silver", "Biru"},
-    Penggerak: "FF",
-    BanyakRoda: 4,
-    BanyakBangku: 4,
-    JenisMesin: "Bensin",
-    Mesin: "I4",
-  },
+func (m ModelMobil) TableName() string {
+  return "tb_mobil"
 }
 
-func (m ModelMobil) Get() []ModelMobil {
-  data := dataMobil
-  return data
+func (m Mobil) Get() interface{} {
+  db := Connect()
+  return db.Find(&ModelMobil)
 }
-func (m ModelMobil) Find(id int) interface{} {
-  // lakukan pencarian mobil berdasarkan ID
-  for index, value := range dataMobil {
-    if id == value.ID {
-      return dataMobil[index]
-    }
-  }
-  return struct{}{}
+func (m Mobil) Find(id int) interface{} {
+  db := Connect()
+  return db.First(&ModelMobil, id)
 }
-
