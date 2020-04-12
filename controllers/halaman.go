@@ -7,12 +7,12 @@ import (
 
 // buat objek halaman controller
 var Halaman = CoreController{
-  httpStatus: http.StatusOK,
+  HttpStatus: http.StatusOK,
 }
 
 func (c CoreController) Beranda(ctx echo.Context) error  {
   data := "Ini halaman beranda"
-  return ctx.String(c.httpStatus, data)
+  return ctx.String(c.HttpStatus, data)
 }
 
 func (c CoreController) Login(ctx echo.Context) error  {
@@ -28,7 +28,7 @@ func (c CoreController) Login(ctx echo.Context) error  {
               <button type="submit">Login</button>
             </form>
           `
-  return ctx.HTML(c.httpStatus, data)
+  return ctx.HTML(c.HttpStatus, data)
 }
 
 func (c CoreController) ProsesLogin(ctx echo.Context) error  {
@@ -38,20 +38,20 @@ func (c CoreController) ProsesLogin(ctx echo.Context) error  {
   if username != "madam" && password != "12345" {
     data := "Username atau password salah"
     data += "<br><a href='login'>Kembali</a>"
-    c.httpStatus = http.StatusNonAuthoritativeInfo
-    return ctx.HTML(c.httpStatus, data)
+    c.HttpStatus = http.StatusNonAuthoritativeInfo
+    return ctx.HTML(c.HttpStatus, data)
   } else {
     data := "/dashboard"
-    c.httpStatus = http.StatusFound
-    return ctx.Redirect(c.httpStatus, data)
+    c.HttpStatus = http.StatusFound
+    return ctx.Redirect(c.HttpStatus, data)
   }
 }
 
 func (c CoreController) Dashboard(ctx echo.Context) error  {
-  c.httpStatus = http.StatusOK
+  c.HttpStatus = http.StatusOK
   data := "<h1>Selamat datang didashboard</h1>"
   
-  return ctx.HTML(c.httpStatus, data)
+  return ctx.HTML(c.HttpStatus, data)
 }
 
 
