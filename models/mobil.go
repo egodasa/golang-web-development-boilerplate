@@ -1,33 +1,82 @@
 package models
 
-import (
-  "github.com/jinzhu/gorm"
-  _ "github.com/jinzhu/gorm/dialects/mysql"
-)
-
-type ModelMobil struct {
-  ID int `json:"id_mobil",gorm:"column:id_mobil;AUTO_INCREMENT;primary_key"`
-  KodeMobil string `json:"kode_mobil",gorm:"column:kode_mobil;type:varchar(10)"`
-  Merk string `json:"merk",gorm:"column:merk;type:varchar(50)"`
-  Tipe string `json:"tipe",gorm:"column:tipe;type:varchar(100)"`
-  Harga int `json:"harga",gorm:"column:harga;type:int(11)`
-  Warna string `json:"warna",gorm:"column:warna;type:varchar(20)"`
-  Penggerak string `json:"penggerak",gorm:"column:penggerak;type:varchar(4)"`
-  BanyakRoda int `json:"banyak_roda",gorm:"column:banyak_roda;type:int(11)"`
-  BanyakBangku int `json:"banyak_bangku",gorm:"column:banyak_bangku;type:int(11)"`
-  JenisMesin string `json:"jenis_mesin,gorm:"column:jenis_mesin;type:varchar(20)`
-  Mesin string `json:"mesin",gorm:"column:mesin;type:varchar(20)"`
+var MobilColumn = []Column{{
+    Name: "id_mobil",
+    Type: "varchar(255)",
+    Fillable: false,
+    IsPk: true,
+  },
+  {
+    Name: "kode_mobil",
+    Type: "varchar(10)",
+    Fillable: true,
+  },
+  {
+    Name: "merk",
+    Type: "varchar(50)",
+    Fillable: true,
+  },  
+  {
+    Name: "tipe",
+    Type: "varchar(100)",
+    Fillable: true,
+  },  
+  {
+    Name: "harga",
+    Type: "int(11)",
+    Fillable: true,
+  },  
+  {
+    Name: "warna",
+    Type: "varchar(20)",
+    Fillable: true,
+  },  
+  {
+    Name: "penggerak",
+    Type: "varchar(4)",
+    Fillable: true,
+  },  
+  {
+    Name: "banyak_roda",
+    Type: "int(11)",
+    Fillable: true,
+  },  
+  {
+    Name: "banyak_bangku",
+    Type: "int(11)",
+    Fillable: true,
+  },  
+  {
+    Name: "jenis_mesin",
+    Type: "varchar(20)",
+    Fillable: true,
+  },  
+  {
+    Name: "mesin",
+    Type: "varchar(20)",
+    Fillable: true,
+  },
 }
 
-func (m ModelMobil) TableName() string {
-  return "tb_mobil"
+// inisaliasi model mobil
+// nanti variabel ini akan digunakan di controller
+var ModelMobil = &Mobil{Models{
+ tableName: "tb_mobil",
+ ColumnList: MobilColumn,
+}};
+
+// struct models digabung dengan struct mobil
+// agar kita bisa menambahkan custom methos selain method dasar CRUD ke struct mobil
+// kurang lebih seperti pewarisan
+// dimana struct mobil mendapatkan warisan berupa struct models
+// dan struct mobil bisa dimodifikasi methodnya
+type Mobil struct {
+  Models
 }
 
-func (m Mobil) Get() interface{} {
-  db := Connect()
-  return db.Find(&ModelMobil)
+// contoh custom method dari mobil
+// dimana method ini tidak ada distruct models
+func (m *Mobil) CariMobil(kataKunci string) string {
+  return "Pencarian"
 }
-func (m Mobil) Find(id int) interface{} {
-  db := Connect()
-  return db.First(&ModelMobil, id)
-}
+
