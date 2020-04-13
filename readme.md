@@ -17,4 +17,5 @@ Struktur file/folder dibuat dengan konsep MVC
 | `controller/core.go` | File yang berisi struct yang akan digunakan untuk semua controller. Semacam variabel/method global untuk semua controller |
 | `models/` | Folder yang berisi model. |
 | `views/` (WIP) | Folder yang berisi file views format .HTML |
+| `websockets/` (WIP) | Folder yang berisi method untuk websockets. Agar nanti bisa digunakan di controller dll |
 | `.env` | File yang berisi pengaturan aplikasi |
