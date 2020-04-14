@@ -13,12 +13,13 @@ type Column struct {
   Type string
   Fillable bool
   IsPk bool
+  AutoIncrement bool
 }
 
 type Models struct {
   tableName string
-  sql string
   ColumnList []Column
+  PkColumn Column
 }
 
 func (m *Models) GetDb() orm.Ormer {
@@ -32,10 +33,6 @@ func NewModels(tableName string, tableStruct []Column) *Models {
   }
 }
 
-func (m *Models) logSql() {
-  fmt.Println(m.sql);
-}
-
 func (m *Models) setTableStruct(tableStruct []Column) {
   m.ColumnList = tableStruct
 }
@@ -44,13 +41,13 @@ func (m *Models) GetTableName() string {
   return m.tableName
 }
 
-func (m *Models) GetPrimaryKey() string {
-  for _, value := range m.ColumnList {
+func (m *Models) GetPrimaryKey() Column {
+  for i, value := range m.ColumnList {
     if value.IsPk == true {
-      return value.Name
+      return m.ColumnList[i]
     }
   }
-  return "id"
+  return m.ColumnList[0]
 }
 
 func (m *Models) GetColumnSql() string {
@@ -63,32 +60,33 @@ func (m *Models) GetColumnSql() string {
   return strings.Join(listColumn, ",");
 }
 
-func (m *Models) Get() interface{} {
+func (m *Models) Get() (interface{}, bool) {
   Db := m.GetDb()
   result := []orm.Params{}
   sqlTmp := sqlQb.Select("*");
   sqlTmp = sqlTmp.From(m.tableName);
   sql, args, _ := sqlTmp.ToSql();
-  m.sql = sql;
   num, err := Db.Raw(sql, args).Values(&result);
   
   if err != nil {
-    panic(err.Error());
+    fmt.Println(err.Error());
+    return struct{}{}, true
   }
   
   if num > 0 {
-    return result
+    return result, false
   } else {
-    return struct{}{}
+    return struct{}{}, false
   }
 }
 
-func (m *Models) Find(id interface{}) interface{} {
+func (m *Models) Find(id interface{}) (interface{}, bool) {
   Db := m.GetDb()
   result := []orm.Params{}
+  PkColumn := m.GetPrimaryKey()
   
   sqlWhere := make(sqlQb.Eq)
-  sqlWhere[m.GetPrimaryKey()] = id.(string)
+  sqlWhere[PkColumn.Name] = id.(string)
   
   sqlTmp := sqlQb.Select("*");
   sqlTmp = sqlTmp.From(m.tableName);
@@ -98,21 +96,22 @@ func (m *Models) Find(id interface{}) interface{} {
   num, err := Db.Raw(sql, args).Values(&result);
   
   if err != nil {
-    panic(err.Error());
+    fmt.Println(err.Error());
+    return struct{}{}, true
   }
   
   if num > 0 {
-    return result[0]
+    return result[0], false
   } else {
-    return struct{}{}
+    return struct{}{}, false
   }
 }
 
-func (m *Models) Insert(data map[string]interface{}) bool {
+func (m *Models) Insert(data map[string]interface{}) (string, bool) {
   Db := m.GetDb()
-  
   columns := []string{}
   values := []interface{}{}
+  PkColumn := m.GetPrimaryKey()
   
   for _, value := range m.ColumnList {
     if value.Fillable == true {
@@ -127,19 +126,30 @@ func (m *Models) Insert(data map[string]interface{}) bool {
   
   if err != nil {
     fmt.Println(err.Error());
-    return false
+    return "0", true
   }
-  
-  return true
+
+  if PkColumn.AutoIncrement == true {
+    result := []orm.Params{}
+    sqlLastID := "SELECT LAST_INSERT_ID() AS id"
+    _, err := Db.Raw(sqlLastID).Values(&result);
+    if err != nil {
+      fmt.Println(err.Error());
+      return "0", true
+    }
+    return result[0]["id"].(string), false
+  } else {
+    return data[PkColumn.Name].(string), false
+  }
 }
 
 func (m *Models) Update(id string, data map[string]interface{}) bool {
   Db := m.GetDb()
-  
+  PkColumn := m.GetPrimaryKey()
   sqlTmp := sqlQb.Update(m.GetTableName());
   
   sqlWhere := make(sqlQb.Eq)
-  sqlWhere[m.GetPrimaryKey()] = id
+  sqlWhere[PkColumn.Name] = id
   
   for _, value := range m.ColumnList {
     if value.Fillable == true {
@@ -161,8 +171,10 @@ func (m *Models) Update(id string, data map[string]interface{}) bool {
 
 func (m *Models) Delete(id string) bool {
   Db := m.GetDb()
+  PkColumn := m.GetPrimaryKey();
+  
   sqlWhere := make(sqlQb.Eq)
-  sqlWhere[m.GetPrimaryKey()] = id
+  sqlWhere[PkColumn.Name] = id
   
   sql, args, _ := sqlQb.Delete(m.GetTableName()).Where(sqlWhere).ToSql();
   
@@ -174,4 +186,20 @@ func (m *Models) Delete(id string) bool {
   }
   
   return true
+}
+
+func (m *Models) Count() (int, bool) {
+  Db := m.GetDb()
+  result := []orm.Params{}
+  
+  sqlCount := "SELECT COUNT(" + m.PkColumn.Name + ") AS id FROM " + m.GetTableName();
+  
+  _, err := Db.Raw(sqlCount).Values(&result);
+  
+  if err != nil {
+    fmt.Println(err.Error());
+    return 0, true
+  }
+  
+  return result[0]["id"].(int), false
 }

@@ -13,13 +13,27 @@ var Mobil = CoreApi{
 }
 
 func (c CoreApi) Get(ctx echo.Context) error  {
-  c.Data = models.ModelMobil.Get();
+  data, err := models.ModelMobil.Get();
+  if err == true {
+    c.HttpStatus = http.StatusInternalServerError
+    c.Messages = "Terjadi kesalahan dalam mengambil data"
+  } else {
+    c.Data = data
+  }
   return ctx.JSON(c.HttpStatus, c)
 }
 
 func (c CoreApi) Find(ctx echo.Context) error  {
   id := ctx.Param("id")
-  c.Data = models.ModelMobil.Find(id);
+  data, err := models.ModelMobil.Find(id);
+  
+  if err == true {
+    c.HttpStatus = http.StatusInternalServerError
+    c.Messages = "Terjadi kesalahan dalam mencari data"
+  } else {
+    c.Data = data
+  }
+  
   return ctx.JSON(c.HttpStatus, c)
 }
 
@@ -35,11 +49,15 @@ func (c CoreApi) Insert(ctx echo.Context) error  {
   }
 
   // proses insert
-  err := models.ModelMobil.Insert(data);
+  id, err := models.ModelMobil.Insert(data);
   
-  if err == false {
+  if err == true {
     c.HttpStatus = http.StatusInternalServerError
-    c.Messages = "Terjadi kesalahan. Tidak dapat menyimpan data!"
+    c.Messages = "Terjadi kesalahan saat menambahkan data"
+  } else {
+    data := map[string]string{}
+    data["id"] = id
+    c.Data = data
   }
   
   return ctx.JSON(c.HttpStatus, c)
@@ -59,11 +77,11 @@ func (c CoreApi) Update(ctx echo.Context) error  {
   }
 
   // proses insert
-  err := models.ModelMobil.Update(id, data);
+  update := models.ModelMobil.Update(id, data);
   
-  if err == false {
+  if update == false {
     c.HttpStatus = http.StatusInternalServerError
-    c.Messages = "Terjadi kesalahan. Tidak dapat menyimpan data!"
+    c.Messages = "Terjadi kesalahan saat mengupdate data"
   }
   
   return ctx.JSON(c.HttpStatus, c)
@@ -72,20 +90,25 @@ func (c CoreApi) Update(ctx echo.Context) error  {
 func (c CoreApi) Delete(ctx echo.Context) error  {
   id := ctx.Param("id");
   emptyStruct := struct{}{}
-  data := models.ModelMobil.Find(id);
-  
-  if data == emptyStruct {
-    c.HttpStatus = http.StatusNotFound 
-    c.Messages = "Data tidak ditemukan"
+  data, err := models.ModelMobil.Find(id);
+  if err == true {
+    c.HttpStatus = http.StatusInternalServerError
+    c.Messages = "Terjadi kesalahan dalam menghapus data"
   } else {
-    // proses insert
-    err := models.ModelMobil.Delete(id);
-    
-    if err == false {
-      c.HttpStatus = http.StatusInternalServerError
-      c.Messages = "Terjadi kesalahan. Tidak dapat menyimpan data!"
-    }
+      if data == emptyStruct {
+        c.HttpStatus = http.StatusNotFound 
+        c.Messages = "Data tidak ditemukan"
+      } else {
+        // proses insert
+        delete := models.ModelMobil.Delete(id);
+        
+        if delete == false {
+          c.HttpStatus = http.StatusInternalServerError
+          c.Messages = "Terjadi kesalahan. Tidak dapat menyimpan data!"
+        }
+      }
   }
+  
   
   return ctx.JSON(c.HttpStatus, c)
 }

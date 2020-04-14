@@ -2,58 +2,59 @@ package models
 
 var MobilColumn = []Column{{
     Name: "id_mobil",
-    Type: "varchar(255)",
+    Type: "int",
     Fillable: false,
     IsPk: true,
+    AutoIncrement: true,
   },
   {
     Name: "kode_mobil",
-    Type: "varchar(10)",
+    Type: "varchar",
     Fillable: true,
   },
   {
     Name: "merk",
-    Type: "varchar(50)",
+    Type: "varchar",
     Fillable: true,
   },  
   {
     Name: "tipe",
-    Type: "varchar(100)",
+    Type: "varchar",
     Fillable: true,
   },  
   {
     Name: "harga",
-    Type: "int(11)",
+    Type: "int",
     Fillable: true,
   },  
   {
     Name: "warna",
-    Type: "varchar(20)",
+    Type: "varchar",
     Fillable: true,
   },  
   {
     Name: "penggerak",
-    Type: "varchar(4)",
+    Type: "varchar",
     Fillable: true,
   },  
   {
     Name: "banyak_roda",
-    Type: "int(11)",
+    Type: "int",
     Fillable: true,
   },  
   {
     Name: "banyak_bangku",
-    Type: "int(11)",
+    Type: "int",
     Fillable: true,
   },  
   {
     Name: "jenis_mesin",
-    Type: "varchar(20)",
+    Type: "varchar",
     Fillable: true,
   },  
   {
     Name: "mesin",
-    Type: "varchar(20)",
+    Type: "varchar",
     Fillable: true,
   },
 }
