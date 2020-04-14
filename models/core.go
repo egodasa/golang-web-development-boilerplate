@@ -40,11 +40,11 @@ func (m *Models) setTableStruct(tableStruct []Column) {
   m.ColumnList = tableStruct
 }
 
-func (m *Models) getTableName() string {
+func (m *Models) GetTableName() string {
   return m.tableName
 }
 
-func (m *Models) getPrimaryKey() string {
+func (m *Models) GetPrimaryKey() string {
   for _, value := range m.ColumnList {
     if value.IsPk == true {
       return value.Name
@@ -53,7 +53,7 @@ func (m *Models) getPrimaryKey() string {
   return "id"
 }
 
-func (m *Models) getColumnSql() string {
+func (m *Models) GetColumnSql() string {
   listColumn := []string{}
   for _, value := range m.ColumnList {
     if value.Fillable == true {
@@ -72,8 +72,6 @@ func (m *Models) Get() interface{} {
   m.sql = sql;
   num, err := Db.Raw(sql, args).Values(&result);
   
-  m.logSql();
-  
   if err != nil {
     panic(err.Error());
   }
@@ -90,17 +88,14 @@ func (m *Models) Find(id interface{}) interface{} {
   result := []orm.Params{}
   
   sqlWhere := make(sqlQb.Eq)
-  sqlWhere[m.getPrimaryKey()] = id.(string)
+  sqlWhere[m.GetPrimaryKey()] = id.(string)
   
   sqlTmp := sqlQb.Select("*");
   sqlTmp = sqlTmp.From(m.tableName);
   sqlTmp = sqlTmp.Where(sqlWhere);
   
   sql, args, _ := sqlTmp.ToSql();
-  m.sql = sql;
   num, err := Db.Raw(sql, args).Values(&result);
-  
-  m.logSql();
   
   if err != nil {
     panic(err.Error());
@@ -111,4 +106,72 @@ func (m *Models) Find(id interface{}) interface{} {
   } else {
     return struct{}{}
   }
+}
+
+func (m *Models) Insert(data map[string]interface{}) bool {
+  Db := m.GetDb()
+  
+  columns := []string{}
+  values := []interface{}{}
+  
+  for _, value := range m.ColumnList {
+    if value.Fillable == true {
+      columns = append(columns, value.Name);
+      values = append(values, data[value.Name]);
+    }
+  }
+  
+  sql, args, _ := sqlQb.Insert(m.GetTableName()).Columns(columns...).Values(values...).ToSql()
+  
+  _, err := Db.Raw(sql, args).Exec();
+  
+  if err != nil {
+    fmt.Println(err.Error());
+    return false
+  }
+  
+  return true
+}
+
+func (m *Models) Update(id string, data map[string]interface{}) bool {
+  Db := m.GetDb()
+  
+  sqlTmp := sqlQb.Update(m.GetTableName());
+  
+  sqlWhere := make(sqlQb.Eq)
+  sqlWhere[m.GetPrimaryKey()] = id
+  
+  for _, value := range m.ColumnList {
+    if value.Fillable == true {
+      sqlTmp = sqlTmp.Set(value.Name, data[value.Name]);
+    }
+  }
+  
+  sql, args, _ := sqlTmp.Where(sqlWhere).ToSql()
+  
+  _, err := Db.Raw(sql, args).Exec();
+  
+  if err != nil {
+    fmt.Println(err.Error());
+    return false
+  }
+  
+  return true
+}
+
+func (m *Models) Delete(id string) bool {
+  Db := m.GetDb()
+  sqlWhere := make(sqlQb.Eq)
+  sqlWhere[m.GetPrimaryKey()] = id
+  
+  sql, args, _ := sqlQb.Delete(m.GetTableName()).Where(sqlWhere).ToSql();
+  
+  _, err := Db.Raw(sql, args).Exec();
+  
+  if err != nil {
+    fmt.Println(err.Error());
+    return false
+  }
+  
+  return true
 }

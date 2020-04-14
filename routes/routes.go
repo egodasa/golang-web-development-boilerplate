@@ -16,5 +16,8 @@ func Router() *echo.Echo {
     
     r.GET("/api/mobil", api.Mobil.Get)
     r.GET("/api/mobil/:id", api.Mobil.Find)
+    r.POST("/api/mobil", api.Mobil.Insert)
+    r.PUT("/api/mobil/:id", api.Mobil.Update)
+    r.DELETE("/api/mobil/:id", api.Mobil.Delete)
     return r
 }
