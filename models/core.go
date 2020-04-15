@@ -8,6 +8,18 @@ import (
   sqlQb "github.com/Masterminds/squirrel"
 )
 
+type IModels interface {
+  Get() (interface{}, bool)
+  Find(id interface{}) (interface{}, bool)
+  Delete(id string) bool
+  GetColumnSql() string
+  GetDb() orm.Ormer
+  GetPrimaryKey() Column
+  GetTableName() string
+  Insert(data map[string]interface{}) (string, bool)
+  Update(id string, data map[string]interface{}) bool
+}
+
 type Column struct {
   Name string
   Type string

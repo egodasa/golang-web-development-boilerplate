@@ -61,19 +61,17 @@ var MobilColumn = []Column{{
 
 // inisaliasi model mobil
 // nanti variabel ini akan digunakan di controller
-var ModelMobil = &Mobil{Models{
+var ModelMobil = &Models{
  tableName: "tb_mobil",
  ColumnList: MobilColumn,
-}};
+};
 
 // struct models digabung dengan struct mobil
 // agar kita bisa menambahkan custom methos selain method dasar CRUD ke struct mobil
 // kurang lebih seperti pewarisan
 // dimana struct mobil mendapatkan warisan berupa struct models
 // dan struct mobil bisa dimodifikasi methodnya
-type Mobil struct {
-  Models
-}
+type Mobil Models
 
 // contoh custom method dari mobil
 // dimana method ini tidak ada distruct models
