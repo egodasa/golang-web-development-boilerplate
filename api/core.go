@@ -10,7 +10,7 @@ type CoreApi struct {
   HttpStatus int `json:"code"` // field untuk kode http
   Messages string `json:"message,omitempty"` // field untuk pesan
   Data interface{} `json:"data,omitempty"` // field yang menamping data yang akan diberikan ke klien
-  ApiModels *md.Models
+  ApiModels *md.Models `json:"-"`
 }
 
 func (c CoreApi) Get(ctx echo.Context) error  {
@@ -39,7 +39,7 @@ func (c CoreApi) Find(ctx echo.Context) error  {
 }
 
 func (c CoreApi) Insert(ctx echo.Context) error  {
-  data := map[string]interface{}{}
+  data := make(map[string]string)
   
   // data yang dimasukkan hanyalah data yang sudah ditentukan di ColumnList
   // serta data yang ada nilainya
@@ -67,13 +67,13 @@ func (c CoreApi) Insert(ctx echo.Context) error  {
 func (c CoreApi) Update(ctx echo.Context) error  {
   id := ctx.Param("id");
   
-  data := map[string]interface{}{}
+  data := make(map[string]string)
   
   // data yang dimasukkan hanyalah data yang sudah ditentukan di ColumnList
   // serta data yang ada nilainya
   for _, value := range c.ApiModels.ColumnList {
     if ctx.FormValue(value.Name) != "" {
-      data[value.Name] = string(ctx.FormValue(value.Name));
+      data[value.Name] = ctx.FormValue(value.Name);
     }
   }
 
@@ -90,13 +90,12 @@ func (c CoreApi) Update(ctx echo.Context) error  {
 
 func (c CoreApi) Delete(ctx echo.Context) error  {
   id := ctx.Param("id");
-  emptyStruct := struct{}{}
   data, err := c.ApiModels.Find(id);
   if err == true {
     c.HttpStatus = http.StatusInternalServerError
     c.Messages = "Terjadi kesalahan dalam menghapus data"
   } else {
-      if data == emptyStruct {
+      if data == nil {
         c.HttpStatus = http.StatusNotFound 
         c.Messages = "Data tidak ditemukan"
       } else {

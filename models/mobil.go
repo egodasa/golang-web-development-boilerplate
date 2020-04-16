@@ -8,32 +8,17 @@ var MobilColumn = []Column{{
     AutoIncrement: true,
   },
   {
-    Name: "kode_mobil",
-    Type: "varchar",
+    Name: "id_perusahaan",
+    Type: "int",
     Fillable: true,
   },
   {
-    Name: "merk",
+    Name: "nm_mobil",
     Type: "varchar",
     Fillable: true,
   },  
   {
-    Name: "tipe",
-    Type: "varchar",
-    Fillable: true,
-  },  
-  {
-    Name: "harga",
-    Type: "int",
-    Fillable: true,
-  },  
-  {
-    Name: "warna",
-    Type: "varchar",
-    Fillable: true,
-  },  
-  {
-    Name: "penggerak",
+    Name: "jenis_penggerak",
     Type: "varchar",
     Fillable: true,
   },  
@@ -43,20 +28,15 @@ var MobilColumn = []Column{{
     Fillable: true,
   },  
   {
-    Name: "banyak_bangku",
+    Name: "id_jenis",
     Type: "int",
     Fillable: true,
   },  
   {
-    Name: "jenis_mesin",
-    Type: "varchar",
+    Name: "harga",
+    Type: "int",
     Fillable: true,
   },  
-  {
-    Name: "mesin",
-    Type: "varchar",
-    Fillable: true,
-  },
 }
 
 // inisaliasi model mobil

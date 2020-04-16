@@ -3,7 +3,6 @@ package models
 import (
   "github.com/astaxie/beego/orm"
   _ "github.com/go-sql-driver/mysql" // import your required driver
-  "strings"
   "fmt"
   sqlQb "github.com/Masterminds/squirrel"
 )
@@ -32,6 +31,7 @@ type Models struct {
   tableName string
   ColumnList []Column
   PkColumn Column
+  SelectStatement sqlQb.SelectBuilder
 }
 
 func (m *Models) GetDb() orm.Ormer {
@@ -43,6 +43,10 @@ func NewModels(tableName string, tableStruct []Column) *Models {
     tableName: tableName,
     ColumnList: tableStruct,
   }
+}
+
+func (m *Models) SetCustomSelect(sql sqlQb.SelectBuilder) {
+  m.SelectStatement = sql
 }
 
 func (m *Models) setTableStruct(tableStruct []Column) {
@@ -62,71 +66,52 @@ func (m *Models) GetPrimaryKey() Column {
   return m.ColumnList[0]
 }
 
-func (m *Models) GetColumnSql() string {
-  listColumn := []string{}
+func (m *Models) GetColumnSql() (column []string) {
   for _, value := range m.ColumnList {
-    if value.Fillable == true {
-      listColumn = append(listColumn, value.Name);
-    }
+    column = append(column, value.Name);
   }
-  return strings.Join(listColumn, ",");
+  return column;
 }
 
-func (m *Models) Get() (interface{}, bool) {
+func (m *Models) Get() (result []orm.Params, isError bool) {
   Db := m.GetDb()
-  result := []orm.Params{}
-  sqlTmp := sqlQb.Select("*");
-  sqlTmp = sqlTmp.From(m.tableName);
-  sql, args, _ := sqlTmp.ToSql();
-  num, err := Db.Raw(sql, args).Values(&result);
+  sql, args, _ := sqlQb.Select("*").From(m.tableName).ToSql();
+  _, err := Db.Raw(sql, args).Values(&result);
   
   if err != nil {
     fmt.Println(err.Error());
-    return struct{}{}, true
+    isError = true
   }
   
-  if num > 0 {
-    return result, false
-  } else {
-    return struct{}{}, false
-  }
+  return result, isError
 }
 
-func (m *Models) Find(id interface{}) (interface{}, bool) {
+func (m *Models) Find(id string) (result []orm.Params, isError bool) {
   Db := m.GetDb()
-  result := []orm.Params{}
   PkColumn := m.GetPrimaryKey()
   
   sqlWhere := make(sqlQb.Eq)
-  sqlWhere[PkColumn.Name] = id.(string)
-  
-  sqlTmp := sqlQb.Select("*");
-  sqlTmp = sqlTmp.From(m.tableName);
-  sqlTmp = sqlTmp.Where(sqlWhere);
-  
-  sql, args, _ := sqlTmp.ToSql();
-  num, err := Db.Raw(sql, args).Values(&result);
+  sqlWhere[PkColumn.Name] = id
+
+  sql, args, _ := sqlQb.Select("*").From(m.tableName).Where(sqlWhere).ToSql();
+  _, err := Db.Raw(sql, args).Values(&result);
   
   if err != nil {
     fmt.Println(err.Error());
-    return struct{}{}, true
+    isError = true
   }
   
-  if num > 0 {
-    return result[0], false
-  } else {
-    return struct{}{}, false
-  }
+  return result, isError
 }
 
-func (m *Models) Insert(data map[string]interface{}) (string, bool) {
+func (m *Models) Insert(data map[string]string) (lastId string, isError bool) {
   Db := m.GetDb()
   columns := []string{}
   values := []interface{}{}
   PkColumn := m.GetPrimaryKey()
   
   for _, value := range m.ColumnList {
-    if value.Fillable == true {
+    if value.Fillable == true && data[value.Name] != "" {
       columns = append(columns, value.Name);
       values = append(values, data[value.Name]);
     }
@@ -138,24 +123,27 @@ func (m *Models) Insert(data map[string]interface{}) (string, bool) {
   
   if err != nil {
     fmt.Println(err.Error());
-    return "0", true
-  }
-
-  if PkColumn.AutoIncrement == true {
-    result := []orm.Params{}
-    sqlLastID := "SELECT LAST_INSERT_ID() AS id"
-    _, err := Db.Raw(sqlLastID).Values(&result);
-    if err != nil {
-      fmt.Println(err.Error());
-      return "0", true
-    }
-    return result[0]["id"].(string), false
+    lastId = "0"
+    isError = true
   } else {
-    return data[PkColumn.Name].(string), false
+      if PkColumn.AutoIncrement == true {
+        result := []orm.Params{}
+        _, err := Db.Raw("SELECT LAST_INSERT_ID() AS id").Values(&result);
+        if err != nil {
+          fmt.Println(err.Error());
+          lastId = "0"
+          isError = true
+        } else {
+          lastId = result[0]["id"].(string)
+        }
+      } else {
+        lastId = data[PkColumn.Name]
+      }
   }
+  return lastId, isError
 }
 
-func (m *Models) Update(id string, data map[string]interface{}) bool {
+func (m *Models) Update(id string, data map[string]string) (isError bool) {
   Db := m.GetDb()
   PkColumn := m.GetPrimaryKey()
   sqlTmp := sqlQb.Update(m.GetTableName());
@@ -164,7 +152,7 @@ func (m *Models) Update(id string, data map[string]interface{}) bool {
   sqlWhere[PkColumn.Name] = id
   
   for _, value := range m.ColumnList {
-    if value.Fillable == true {
+    if value.Fillable == true && data[value.Name] != "" {
       sqlTmp = sqlTmp.Set(value.Name, data[value.Name]);
     }
   }
@@ -175,13 +163,13 @@ func (m *Models) Update(id string, data map[string]interface{}) bool {
   
   if err != nil {
     fmt.Println(err.Error());
-    return false
+    isError = true
   }
   
-  return true
+  return isError
 }
 
-func (m *Models) Delete(id string) bool {
+func (m *Models) Delete(id string) (isSuccess bool) {
   Db := m.GetDb()
   PkColumn := m.GetPrimaryKey();
   
@@ -194,24 +182,27 @@ func (m *Models) Delete(id string) bool {
   
   if err != nil {
     fmt.Println(err.Error());
-    return false
+  } else {
+      isSuccess = true
   }
   
-  return true
+  return isSuccess
 }
 
-func (m *Models) Count() (int, bool) {
+func (m *Models) Count() (count int, isError bool) {
   Db := m.GetDb()
-  result := []orm.Params{}
-  
+  result := []orm.Params{};
   sqlCount := "SELECT COUNT(" + m.PkColumn.Name + ") AS id FROM " + m.GetTableName();
   
   _, err := Db.Raw(sqlCount).Values(&result);
   
   if err != nil {
     fmt.Println(err.Error());
-    return 0, true
+    isError = true
+    count = 0
+  } else {
+      count = result[0]["id"].(int)
   }
   
-  return result[0]["id"].(int), false
+  return count, isError
 }
