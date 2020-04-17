@@ -17,6 +17,7 @@ type IModels interface {
   GetTableName() string
   Insert(data map[string]interface{}) (string, bool)
   Update(id string, data map[string]interface{}) bool
+  Count() (count int, isError bool)
 }
 
 type Column struct {
@@ -29,8 +30,9 @@ type Column struct {
 
 type Models struct {
   tableName string
-  ColumnList []Column
-  PkColumn Column
+  ColumnList map[string]Column
+  pkColumn Column
+  pKname string
   SelectStatement sqlQb.SelectBuilder
 }
 
@@ -38,10 +40,11 @@ func (m *Models) GetDb() orm.Ormer {
   return orm.NewOrm()
 }
 
-func NewModels(tableName string, tableStruct []Column) *Models {
+func NewModels(tableName string, pk string, tableStruct map[string]Column) *Models {
   return &Models{
     tableName: tableName,
     ColumnList: tableStruct,
+    pKname: pk,
   }
 }
 
@@ -49,21 +52,12 @@ func (m *Models) SetCustomSelect(sql sqlQb.SelectBuilder) {
   m.SelectStatement = sql
 }
 
-func (m *Models) setTableStruct(tableStruct []Column) {
-  m.ColumnList = tableStruct
-}
-
 func (m *Models) GetTableName() string {
   return m.tableName
 }
 
 func (m *Models) GetPrimaryKey() Column {
-  for i, value := range m.ColumnList {
-    if value.IsPk == true {
-      return m.ColumnList[i]
-    }
-  }
-  return m.ColumnList[0]
+  return m.ColumnList[m.pKname]
 }
 
 func (m *Models) GetColumnSql() (column []string) {
@@ -192,7 +186,7 @@ func (m *Models) Delete(id string) (isSuccess bool) {
 func (m *Models) Count() (count int, isError bool) {
   Db := m.GetDb()
   result := []orm.Params{};
-  sqlCount := "SELECT COUNT(" + m.PkColumn.Name + ") AS id FROM " + m.GetTableName();
+  sqlCount := "SELECT COUNT(" + m.pkColumn.Name + ") AS id FROM " + m.GetTableName();
   
   _, err := Db.Raw(sqlCount).Values(&result);
   
