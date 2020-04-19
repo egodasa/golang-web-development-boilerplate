@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"belajar-ech0-framework/api"
-	"belajar-ech0-framework/controllers"
+	api "belajar-ech0-framework/api"
+	controllers "belajar-ech0-framework/controllers"
 	mdl "belajar-ech0-framework/middleware"
 
-	"github.com/gin-gonic/gin"
+	gin "github.com/gin-gonic/gin"
 )
 
 func Router() *gin.Engine {

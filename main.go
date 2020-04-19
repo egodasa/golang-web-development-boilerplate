@@ -1,12 +1,12 @@
 package main
 
 import (
-	"belajar-ech0-framework/config"
-	"belajar-ech0-framework/routes"
-	"os"
+	config "belajar-ech0-framework/config"
+	routes "belajar-ech0-framework/routes"
+	os "os"
   
-  "github.com/gin-gonic/gin"
-	"github.com/astaxie/beego/orm"
+  gin "github.com/gin-gonic/gin"
+	orm "github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql" // import your required driver
 )
 
