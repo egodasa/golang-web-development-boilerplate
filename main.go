@@ -21,5 +21,5 @@ func main() {
   config.LoadConfig()// ambil konfigurasi aplikasi
   var server *gin.Engine = routes.Router() // ambil routes
   var port string = ":" + os.Getenv("APP_PORT")
-	server.Start(port)
+	server.Run(port)
 }
