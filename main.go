@@ -4,9 +4,9 @@ import (
 	config "belajar-ech0-framework/config"
 	routes "belajar-ech0-framework/routes"
 	os "os"
-  
-  gin "github.com/gin-gonic/gin"
+
 	orm "github.com/astaxie/beego/orm"
+	gin "github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql" // import your required driver
 )
 
@@ -18,8 +18,8 @@ func init() {
 }
 
 func main() {
-  config.LoadConfig()// ambil konfigurasi aplikasi
-  var server *gin.Engine = routes.Router() // ambil routes
-  var port string = ":" + os.Getenv("APP_PORT")
+	config.LoadConfig()                      // ambil konfigurasi aplikasi
+	var server *gin.Engine = routes.Router() // ambil routes
+	var port string = ":" + os.Getenv("APP_PORT")
 	server.Run(port)
 }

@@ -1,27 +1,25 @@
 package api
 
 import (
-    "net/http"
-    hpl "belajar-ech0-framework/helper"
-    
-    "github.com/labstack/echo"
+	hpl "belajar-ech0-framework/helper"
+	http "net/http"
+
+	gin "github.com/gin-gonic/gin"
 )
 
 // vairabel ini akan dipakai di route
 var Auth = CoreApi{
-  HttpStatus: http.StatusOK,
-  Messages: "Ok",
+	HttpStatus: http.StatusOK,
+	Messages:   "Ok",
 }
 
-func (c CoreApi) CekLogin(ctx echo.Context) error  {
-  claims := map[string]interface{}{
-    "username": ctx.FormValue("username"),
-  }
-  
-  token := hpl.GenerateJwtToken(claims, "Kunci");
-  c.Data = map[string]string{
-    "token": token,
-  }
-  return ctx.JSON(c.HttpStatus, c)
-}
+func (c CoreApi) CekLogin(ctx *gin.Context) {
+	var claims map[string]interface{}
+	claims["username"] = ctx.PostForm("username")
 
+	var token string = hpl.GenerateJwtToken(claims, "Kunci")
+	c.Data = map[string]string{
+		"token": token,
+	}
+	ctx.JSON(c.HttpStatus, c)
+}
