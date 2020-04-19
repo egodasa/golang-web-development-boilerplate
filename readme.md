@@ -2,7 +2,7 @@
 Struktur file/folder dibuat dengan konsep MVC
 
 # Library yang digunakan pada project ini
-1. Echo Framework (https://github.com/labstack/echo), merupakan framework golang
+1. Gin Framework (github.com/gin-gonic/gin), merupakan framework golang
 1. Godotenv (https://github.com/joho/godotenv), untuk membaca isi file .env
 1. Kingpin (https://github.com/alecthomas/kingpin), untuk membaca argument/flag pada CLI
 1. Beego (https://github.com/astaxie/beego/), untuk ORM (Hanya ORM nya saja. Karena Beego adalah framework full)
