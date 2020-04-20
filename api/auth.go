@@ -14,7 +14,7 @@ var Auth = CoreApi{
 }
 
 func (c CoreApi) CekLogin(ctx *gin.Context) {
-	var claims map[string]interface{}
+	claims := make(map[string]interface{})
 	claims["username"] = ctx.PostForm("username")
 
 	var token string = hpl.GenerateJwtToken(claims, "Kunci")

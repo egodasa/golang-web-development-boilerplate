@@ -40,7 +40,7 @@ func (c CoreApi) Find(ctx *gin.Context) {
 }
 
 func (c CoreApi) Insert(ctx *gin.Context) {
-	var data map[string]string
+	data :=  make(map[string]string)
 
 	// data yang dimasukkan hanyalah data yang sudah ditentukan di ColumnList
 	// serta data yang ada nilainya
@@ -57,7 +57,7 @@ func (c CoreApi) Insert(ctx *gin.Context) {
 		c.HttpStatus = http.StatusInternalServerError
 		c.Messages = "Terjadi kesalahan saat menambahkan data"
 	} else {
-		var data = map[string]string{}
+		data := make(map[string]string)
 		data["id"] = id
 		c.Data = data
 	}
@@ -68,7 +68,7 @@ func (c CoreApi) Insert(ctx *gin.Context) {
 func (c CoreApi) Update(ctx *gin.Context) {
 	var id string = ctx.Param("id")
 
-	var data map[string]string
+	data :=  make(map[string]string)
 
 	// data yang dimasukkan hanyalah data yang sudah ditentukan di ColumnList
 	// serta data yang ada nilainya
