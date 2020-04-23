@@ -3,7 +3,7 @@ package helper
 
 import (
 	fmt "fmt"
-
+  
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
@@ -22,12 +22,12 @@ func GenerateJwtToken(data map[string]interface{}, kunci string) string {
 	return token
 }
 
-func ValidateJwtToken(tokenString string) bool {
+func ValidateJwtToken(tokenString string, kunci string) bool {
 	var token, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if jwt.GetSigningMethod("HS256") != token.Method {
 			return nil, fmt.Errorf("Token not valid!")
 		}
-		return []byte("secret"), nil
+		return []byte(kunci), nil
 	})
 
 	if token != nil && err == nil {

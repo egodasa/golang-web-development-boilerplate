@@ -19,6 +19,7 @@ func Router() *gin.Engine {
 
 	var apiRoutes *gin.RouterGroup = route.Group("api")
 	{
+		apiRoutes.GET("/cek/token", api.Auth.CekToken)
 		apiRoutes.POST("/login", api.Auth.CekLogin)
 		apiRoutes.GET("/mobil", api.Mobil.Get)
 		apiRoutes.GET("/mobil/:id", api.Mobil.Find)
