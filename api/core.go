@@ -79,9 +79,9 @@ func (c CoreApi) Update(ctx *gin.Context) {
 	}
 
 	// proses insert
-	update := c.ApiModels.Update(id, data)
+	err := c.ApiModels.Update(id, data)
 
-	if update == false {
+	if err == true {
 		c.HttpStatus = http.StatusInternalServerError
 		c.Messages = "Terjadi kesalahan saat mengupdate data"
 	}
@@ -101,9 +101,9 @@ func (c CoreApi) Delete(ctx *gin.Context) {
 			c.Messages = "Data tidak ditemukan"
 		} else {
 			// proses insert
-			delete := c.ApiModels.Delete(id)
+			err = c.ApiModels.Delete(id)
 
-			if delete == false {
+			if err == true {
 				c.HttpStatus = http.StatusInternalServerError
 				c.Messages = "Terjadi kesalahan. Tidak dapat menyimpan data!"
 			}

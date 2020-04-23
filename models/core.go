@@ -163,7 +163,7 @@ func (m *Models) Update(id string, data map[string]string) (isError bool) {
   return isError
 }
 
-func (m *Models) Delete(id string) (isSuccess bool) {
+func (m *Models) Delete(id string) (isError bool) {
   Db := m.GetDb()
   PkColumn := m.GetPrimaryKey();
   
@@ -176,11 +176,10 @@ func (m *Models) Delete(id string) (isSuccess bool) {
   
   if err != nil {
     fmt.Println(err.Error());
-  } else {
-      isSuccess = true
+    isError = true
   }
   
-  return isSuccess
+  return isError
 }
 
 func (m *Models) Count() (count int, isError bool) {
