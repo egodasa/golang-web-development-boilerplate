@@ -17,4 +17,4 @@ var PerusahaanColumn = map[string]Column{
 
 // inisaliasi model perusahaan
 // nanti variabel ini akan digunakan di controller
-var ModelPerusahaan *Models = NewModels("tb_perusahaan", PerusahaanColumn, nil)
+var ModelPerusahaan *Models = NewModels("tb_perusahaan", PerusahaanColumn)

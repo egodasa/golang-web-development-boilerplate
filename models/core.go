@@ -11,6 +11,13 @@ type IModels interface {
   GetTableName() string
   GetPkColumn() Column
   GetColumnList() map[string]Column
+  GetColumnListAsSql() []string
+}
+
+type RelatedModels struct {
+  ColumnStart string
+  ColumnTarget string
+  ModelTarget IModels
 }
 
 type Column struct {
@@ -25,14 +32,14 @@ type Models struct {
   tableName string
   pkColumn Column
   columnList map[string]Column
-  relatedModels []IModels
+  relatedModels []RelatedModels
 }
 
 func (m *Models) GetDb() orm.Ormer {
   return orm.NewOrm()
 }
 
-func NewModels(tableName string, tableStruct map[string]Column, relatedModels []IModels) *Models {
+func NewModels(tableName string, tableStruct map[string]Column, relatedModels ...RelatedModels) *Models {
   var banyakPk int
   for _, value := range tableStruct {
     if value.IsPk == true {
@@ -50,12 +57,8 @@ func NewModels(tableName string, tableStruct map[string]Column, relatedModels []
   }
 }
 
-func (m *Models) GetRelatedModels() []IModels {
+func (m *Models) GetRelatedModels() []RelatedModels {
   return m.relatedModels
-}
-
-func (m *Models) AddRelatedModels(model IModels) {
-  m.relatedModels = append(m.relatedModels, model);
 }
 
 func (m *Models) GetTableName() string {
@@ -73,6 +76,13 @@ func (m *Models) GetPkColumn() (pkColumn Column) {
 
 func (m *Models) GetColumnList() map[string]Column {
   return m.columnList
+}
+
+func (m *Models) GetColumnListAsSql() (column []string) {
+  for _, value := range m.columnList {
+    column = append(column, "`" + m.tableName + "`" + "." + "`" + value.Name + "`");
+  }
+  return column
 }
 
 func (m *Models) Get() (result []orm.Params, isError bool) {
