@@ -1,23 +1,16 @@
 package models
 
 import (
-  "github.com/astaxie/beego/orm"
+  orm "github.com/astaxie/beego/orm"
   _ "github.com/go-sql-driver/mysql" // import your required driver
   "fmt"
   sqlQb "github.com/Masterminds/squirrel"
 )
 
 type IModels interface {
-  Get() (interface{}, bool)
-  Find(id interface{}) (interface{}, bool)
-  Delete(id string) bool
-  GetColumnSql() string
-  GetDb() orm.Ormer
-  GetPrimaryKey() Column
   GetTableName() string
-  Insert(data map[string]interface{}) (string, bool)
-  Update(id string, data map[string]interface{}) bool
-  Count() (count int, isError bool)
+  GetPkColumn() Column
+  GetColumnList() map[string]Column
 }
 
 type Column struct {
@@ -30,41 +23,56 @@ type Column struct {
 
 type Models struct {
   tableName string
-  ColumnList map[string]Column
   pkColumn Column
-  pKname string
-  SelectStatement sqlQb.SelectBuilder
+  columnList map[string]Column
+  relatedModels []IModels
 }
 
 func (m *Models) GetDb() orm.Ormer {
   return orm.NewOrm()
 }
 
-func NewModels(tableName string, pk string, tableStruct map[string]Column) *Models {
+func NewModels(tableName string, tableStruct map[string]Column, relatedModels []IModels) *Models {
+  var banyakPk int
+  for _, value := range tableStruct {
+    if value.IsPk == true {
+      banyakPk += 1
+    }
+  }
+  if banyakPk != 1 {
+    panic("Primary Key berlebih atau belum diset!");
+  }
+  
   return &Models{
     tableName: tableName,
-    ColumnList: tableStruct,
-    pKname: pk,
+    columnList: tableStruct,
+    relatedModels: relatedModels,
   }
 }
 
-func (m *Models) SetCustomSelect(sql sqlQb.SelectBuilder) {
-  m.SelectStatement = sql
+func (m *Models) GetRelatedModels() []IModels {
+  return m.relatedModels
+}
+
+func (m *Models) AddRelatedModels(model IModels) {
+  m.relatedModels = append(m.relatedModels, model);
 }
 
 func (m *Models) GetTableName() string {
   return m.tableName
 }
 
-func (m *Models) GetPrimaryKey() Column {
-  return m.ColumnList[m.pKname]
+func (m *Models) GetPkColumn() (pkColumn Column) {
+  for index, value := range m.columnList {
+    if value.IsPk == true {
+      pkColumn = m.columnList[index]
+    }
+  }
+  return pkColumn
 }
 
-func (m *Models) GetColumnSql() (column []string) {
-  for _, value := range m.ColumnList {
-    column = append(column, value.Name);
-  }
-  return column;
+func (m *Models) GetColumnList() map[string]Column {
+  return m.columnList
 }
 
 func (m *Models) Get() (result []orm.Params, isError bool) {
@@ -82,7 +90,7 @@ func (m *Models) Get() (result []orm.Params, isError bool) {
 
 func (m *Models) Find(id string) (result []orm.Params, isError bool) {
   Db := m.GetDb()
-  PkColumn := m.GetPrimaryKey()
+  PkColumn := m.GetPkColumn()
   
   sqlWhere := make(sqlQb.Eq)
   sqlWhere[PkColumn.Name] = id
@@ -102,9 +110,9 @@ func (m *Models) Insert(data map[string]string) (lastId string, isError bool) {
   Db := m.GetDb()
   columns := []string{}
   values := []interface{}{}
-  PkColumn := m.GetPrimaryKey()
+  PkColumn := m.GetPkColumn()
   
-  for _, value := range m.ColumnList {
+  for _, value := range m.columnList {
     if value.Fillable == true && data[value.Name] != "" {
       columns = append(columns, value.Name);
       values = append(values, data[value.Name]);
@@ -139,13 +147,13 @@ func (m *Models) Insert(data map[string]string) (lastId string, isError bool) {
 
 func (m *Models) Update(id string, data map[string]string) (isError bool) {
   Db := m.GetDb()
-  PkColumn := m.GetPrimaryKey()
+  PkColumn := m.GetPkColumn()
   sqlTmp := sqlQb.Update(m.GetTableName());
   
   sqlWhere := make(sqlQb.Eq)
   sqlWhere[PkColumn.Name] = id
   
-  for _, value := range m.ColumnList {
+  for _, value := range m.columnList {
     if value.Fillable == true && data[value.Name] != "" {
       sqlTmp = sqlTmp.Set(value.Name, data[value.Name]);
     }
@@ -165,7 +173,7 @@ func (m *Models) Update(id string, data map[string]string) (isError bool) {
 
 func (m *Models) Delete(id string) (isError bool) {
   Db := m.GetDb()
-  PkColumn := m.GetPrimaryKey();
+  PkColumn := m.GetPkColumn();
   
   sqlWhere := make(sqlQb.Eq)
   sqlWhere[PkColumn.Name] = id

@@ -42,7 +42,5 @@ var MobilColumn = map[string]Column{
 
 // inisaliasi model mobil
 // nanti variabel ini akan digunakan di controller
-var ModelMobil *Models = NewModels("tb_mobil", "id_mobil", MobilColumn)
-
-
+var ModelMobil *Models = NewModels("tb_mobil", MobilColumn, []IModels{ModelPerusahaan, ModelJenisMobil})
 

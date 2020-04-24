@@ -17,4 +17,4 @@ var JenisMobilColumn = map[string]Column{
 
 // inisaliasi model perusahaan
 // nanti variabel ini akan digunakan di controller
-var ModelJenisMobil *Models = NewModels("tb_jenis_mobil", "id_jenis", JenisMobilColumn)
+var ModelJenisMobil *Models = NewModels("tb_jenis_mobil", JenisMobilColumn, nil)
