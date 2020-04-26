@@ -40,20 +40,12 @@ var MobilColumn = map[string]Column{
   },
 } 
 
-var relatedModels = []RelatedModels{
-  RelatedModels{
-    ColumnStart: "id_perusahaan", 
-    ColumnTarget: "id_perusahaan",
-    ModelTarget: ModelPerusahaan,
-  },
-  RelatedModels{
-    ColumnStart: "id_jenis", 
-    ColumnTarget: "id_jenis",
-    ModelTarget: ModelJenisMobil,
-  },
-}
 
 // inisaliasi model mobil
 // nanti variabel ini akan digunakan di controller
-var ModelMobil *Models = NewModels("tb_mobil", MobilColumn, relatedModels...)
+type Mobil struct {
+  *Models
+}
+
+var ModelMobil Mobil = Mobil{NewModels("tb_mobil", MobilColumn)}
 

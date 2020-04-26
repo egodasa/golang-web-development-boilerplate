@@ -6,11 +6,15 @@ import (
 )
 
 // vairabel ini akan dipakai di route
-var Perusahaan = CoreApi{
+type ApiPerusahaan struct {
+  *CoreApi
+}
+
+var Perusahaan ApiPerusahaan = ApiPerusahaan{&CoreApi{
   HttpStatus: http.StatusOK,
   Messages: "Ok",
   ApiModels: md.ModelPerusahaan,
-}
+}}
 
 
 

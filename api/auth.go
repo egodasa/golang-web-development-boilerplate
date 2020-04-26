@@ -11,15 +11,18 @@ import (
 )
 
 // vairabel ini akan dipakai di route
-var Auth = CoreApi{
+type ApiAuth struct {
+  *CoreApi
+}
+var Auth ApiAuth = ApiAuth{&CoreApi{
 	HttpStatus: http.StatusOK,
 	Messages:   "Ok",
-}
+}}
 
 
 // CekLogin
 // Controller untuk generate token JWT dari data login
-func (c CoreApi) CekLogin(ctx *gin.Context) {
+func (c ApiAuth) CekLogin(ctx *gin.Context) {
 	claims := make(map[string]interface{})
   claims["iss"] = time.Now().Unix()
 	claims["username"] = ctx.PostForm("username")

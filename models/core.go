@@ -12,12 +12,12 @@ type IModels interface {
   GetPkColumn() Column
   GetColumnList() map[string]Column
   GetColumnListAsSql() []string
-}
-
-type RelatedModels struct {
-  ColumnStart string
-  ColumnTarget string
-  ModelTarget IModels
+  Get() ([]orm.Params, bool)
+  Find(string) ([]orm.Params, bool)
+  Insert(data map[string]string) (string, bool)
+  Update(string, map[string]string) (bool)
+  Delete(string) (bool)
+  Count() (int, bool)
 }
 
 type Column struct {
@@ -32,14 +32,13 @@ type Models struct {
   tableName string
   pkColumn Column
   columnList map[string]Column
-  relatedModels []RelatedModels
 }
 
 func (m *Models) GetDb() orm.Ormer {
   return orm.NewOrm()
 }
 
-func NewModels(tableName string, tableStruct map[string]Column, relatedModels ...RelatedModels) *Models {
+func NewModels(tableName string, tableStruct map[string]Column) *Models {
   var banyakPk int
   for _, value := range tableStruct {
     if value.IsPk == true {
@@ -53,12 +52,7 @@ func NewModels(tableName string, tableStruct map[string]Column, relatedModels ..
   return &Models{
     tableName: tableName,
     columnList: tableStruct,
-    relatedModels: relatedModels,
   }
-}
-
-func (m *Models) GetRelatedModels() []RelatedModels {
-  return m.relatedModels
 }
 
 func (m *Models) GetTableName() string {

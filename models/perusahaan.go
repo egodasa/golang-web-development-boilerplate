@@ -17,4 +17,8 @@ var PerusahaanColumn = map[string]Column{
 
 // inisaliasi model perusahaan
 // nanti variabel ini akan digunakan di controller
-var ModelPerusahaan *Models = NewModels("tb_perusahaan", PerusahaanColumn)
+type Perusahaan struct {
+  *Models
+}
+
+var ModelPerusahaan Perusahaan = Perusahaan{NewModels("tb_perusahaan", PerusahaanColumn)}

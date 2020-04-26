@@ -6,11 +6,15 @@ import (
 )
 
 // vairabel ini akan dipakai di route
-var Mobil = CoreApi{
+type ApiMobil struct {
+  *CoreApi
+}
+
+var Mobil ApiMobil = ApiMobil{&CoreApi{
   HttpStatus: http.StatusOK,
   Messages: "Ok",
   ApiModels: md.ModelMobil,
-}
+}}
 
 
 
