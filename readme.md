@@ -18,3 +18,4 @@
 | `views/` (WIP) | Folder yang berisi file views format .HTML |
 | `websockets/` (WIP) | Folder yang berisi method untuk websockets. Agar nanti bisa digunakan di controller dll |
 | `.env` | File yang berisi pengaturan aplikasi |
+| helper/ | Kumpulan kode yang berisi kumpulan fungsi untuk mempermudah beberapa task |
