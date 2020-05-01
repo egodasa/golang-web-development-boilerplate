@@ -5,6 +5,44 @@ import (
 	str "strings"
 )
 
+func SelectSql(table string, column []string, whereList map[string]interface{}) (string, []interface{}, error) {
+	result := sq.Select(column...).From(table)
+	for keys, val := range whereList {
+		op := str.Split(keys, " ")
+		if len(op) == 2 {
+			switch op[0] {
+			case "[>]": // [>] == LEFT JOIN
+				result = result.LeftJoin(op[1] + " ON " + val.(string))
+			case "[<]": // [<] == RIGH JOIN
+				result = result.RightJoin(op[1] + " ON " + val.(string))
+			case "[><]": // [><] == INNER JOIN
+				result = result.Join(op[1] + " ON " + val.(string))
+			default: // TANPA JOIN, LANGSUNG WHERE
+				result = result.Where(WhereSql(keys, val))
+			}
+		} else if len(op) == 1 {
+			switch keys {
+			case "ORDER":
+				orderList := val.([]string)
+				result = result.OrderBy(orderList...)
+			case "GROUP":
+				groupList := val.([]string)
+				result = result.GroupBy(groupList...)
+			case "HAVING":
+				dataHaving := val.(map[string]interface{})
+				for keys, value := range dataHaving {
+					result = result.Having(WhereSql(keys, value))
+				}
+			}
+		} else {
+			panic("Format Kolom SQL Salah! Nama Kolom maksimal 1 Spasi")
+		}
+
+	}
+	sql, args, err := result.ToSql()
+	return sql, args, err
+}
+
 func InsertSql(table string, data map[string]interface{}) (string, []interface{}, error) {
 	sqlResult := sq.Insert(table)
 
@@ -15,30 +53,6 @@ func InsertSql(table string, data map[string]interface{}) (string, []interface{}
 	return sql, args, err
 }
 
-func SelectSql(table string, column []string, whereList map[string]interface{}) (string, []interface{}, error) {
-	result := sq.Select(column...).From(table)
-	for keys, val := range whereList {
-		// cek apakah ada join atau tidak
-		// [>] == LEFT JOIN
-		// [<] == RIGH JOIN
-		// [<>] == FULL JOIN
-		// [><] == INNER JOIN
-		op := str.Split(keys, " ")
-		switch op[0] {
-		case "[>]":
-			result = result.LeftJoin(op[1] + " ON " + val.(string))
-		case "[<]":
-			result = result.RightJoin(op[1] + " ON " + val.(string))
-		case "[><]":
-			result = result.Join(op[1] + " ON " + val.(string))
-		default:
-			result = result.Where(ConditionSql(keys, val))
-		}
-	}
-	sql, args, err := result.ToSql()
-	return sql, args, err
-}
-
 func UpdateSql(table string, data map[string]interface{}, where map[string]interface{}) (string, []interface{}, error) {
 	sqlResult := sq.Update(table)
 	for keys, value := range data {
@@ -46,7 +60,7 @@ func UpdateSql(table string, data map[string]interface{}, where map[string]inter
 	}
 
 	for keys, value := range where {
-		sqlResult = sqlResult.Where(ConditionSql(keys, value))
+		sqlResult = sqlResult.Where(WhereSql(keys, value))
 	}
 
 	sql, args, err := sqlResult.ToSql()
@@ -56,21 +70,27 @@ func UpdateSql(table string, data map[string]interface{}, where map[string]inter
 func DeleteSql(table string, where map[string]interface{}) (string, []interface{}, error) {
 	sqlResult := sq.Delete(table)
 	for keys, value := range where {
-		sqlResult = sqlResult.Where(ConditionSql(keys, value))
+		sqlResult = sqlResult.Where(WhereSql(keys, value))
 	}
 
 	sql, args, err := sqlResult.ToSql()
 	return sql, args, err
 }
 
-func ConditionSql(column string, value interface{}) (result sq.Sqlizer) {
+func WhereSql(column string, value interface{}) (result sq.Sqlizer) {
 	op := str.Split(column, " ")
 	// operator sama dengan
-	if len(op) < 2 {
-		if column != "OR" {
+	if len(op) == 1 {
+		switch column {
+		case "OR":
+			dataOr := value.(map[string]interface{})
+			sqlOr := sq.Or{}
+			for keys, val := range dataOr {
+				sqlOr = append(sqlOr, WhereSql(keys, val))
+			}
+			result = sqlOr
+		default:
 			result = sq.Eq{column: value}
-		} else {
-			result = OperatorOrSql(value.(map[string]interface{}))
 		}
 	} else if len(op) == 2 {
 		// op[0] = nama kolom
@@ -91,13 +111,8 @@ func ConditionSql(column string, value interface{}) (result sq.Sqlizer) {
 		default:
 			result = sq.Eq{column: value}
 		}
-	}
-	return result
-}
-
-func OperatorOrSql(columnList map[string]interface{}) (result sq.Or) {
-	for keys, val := range columnList {
-		result = append(result, ConditionSql(keys, val)) // semua isi kolom OR diproses rekursif oleh fungsi ini
+	} else {
+		panic("Format SQL Where Salah!")
 	}
 	return result
 }
