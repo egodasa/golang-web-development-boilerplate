@@ -33,6 +33,10 @@ func SelectSql(table string, column []string, whereList map[string]interface{}) 
 				for keys, value := range dataHaving {
 					result = result.Having(WhereSql(keys, value))
 				}
+			case "LIMIT":
+				result = result.Limit(uint64(val.(int)))
+			case "OFFSET":
+				result = result.Offset(uint64(val.(int)))
 			}
 		} else {
 			panic("Format Kolom SQL Salah! Nama Kolom maksimal 1 Spasi")

@@ -3,6 +3,7 @@ package routes
 import (
 	api "belajar-ech0-framework/api"
 	controllers "belajar-ech0-framework/controllers"
+	middleware "belajar-ech0-framework/middleware"
 
 	// mdl "belajar-ech0-framework/middleware"
 
@@ -21,6 +22,8 @@ func Router() *gin.Engine {
 	{
 		apiRoutes.GET("/cek/token", api.Auth.CekToken)
 		apiRoutes.POST("/login", api.Auth.CekLogin)
+
+		apiRoutes.Use(middleware.ValidasiTokenJwt) // hapus midlleware ini untuk mematikan JWT
 		apiRoutes.GET("/mobil", api.Mobil.Get)
 		apiRoutes.GET("/mobil/:id", api.Mobil.Find)
 		apiRoutes.POST("/mobil", api.Mobil.Insert)
@@ -39,5 +42,6 @@ func Router() *gin.Engine {
 		apiRoutes.PUT("/jenis-mobil/:id", api.JenisMobil.Update)
 		apiRoutes.DELETE("/jenis-mobil/:id", api.JenisMobil.Delete)
 	}
+
 	return route
 }

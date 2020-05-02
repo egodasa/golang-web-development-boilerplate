@@ -53,7 +53,7 @@ type Mobil struct {
   *Models
 }
 
-func (m *Mobil) GetMobil() (result []orm.Params, isError bool) {
+func (m *Mobil) GetMobil(limit int, offset int) (result []orm.Params, isError bool) {
   Db := m.GetDb()
   sqlColumn := []string{
     "tb_mobil.*",
@@ -64,6 +64,11 @@ func (m *Mobil) GetMobil() (result []orm.Params, isError bool) {
   sqlWhere := map[string]interface{}{
     "[><] tb_jenis_mobil": "tb_mobil.id_jenis = tb_jenis_mobil.id_jenis",
     "[><] tb_perusahaan":  "tb_mobil.id_perusahaan = tb_perusahaan.id_perusahaan",
+  }
+
+  if limit != 0 && offset != 0 {
+    sqlWhere["LIMIT"] = limit
+    sqlWhere["OFFSET"] = offset
   }
 
   sql, args, _ := hpl.SelectSql(m.GetTableName(), sqlColumn, sqlWhere)
