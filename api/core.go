@@ -40,11 +40,11 @@ func (c CoreApi) Find(ctx *gin.Context) {
 }
 
 func (c CoreApi) Insert(ctx *gin.Context) {
-	data :=  make(map[string]string)
+	data := make(map[string]string)
 
 	// data yang dimasukkan hanyalah data yang sudah ditentukan di ColumnList
 	// serta data yang ada nilainya
-  columnList := c.ApiModels.GetColumnList()
+	columnList := c.ApiModels.GetColumnList()
 	for _, value := range columnList {
 		if ctx.PostForm(value.Name) != "" {
 			data[value.Name] = string(ctx.PostForm(value.Name))
@@ -69,11 +69,11 @@ func (c CoreApi) Insert(ctx *gin.Context) {
 func (c CoreApi) Update(ctx *gin.Context) {
 	var id string = ctx.Param("id")
 
-	data :=  make(map[string]string)
+	data := make(map[string]string)
 
 	// data yang dimasukkan hanyalah data yang sudah ditentukan di ColumnList
 	// serta data yang ada nilainya
-  columnList := c.ApiModels.GetColumnList();
+	columnList := c.ApiModels.GetColumnList()
 	for _, value := range columnList {
 		if ctx.PostForm(value.Name) != "" {
 			data[value.Name] = ctx.PostForm(value.Name)
