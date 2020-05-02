@@ -6,6 +6,7 @@ import (
   sqlQb "github.com/Masterminds/squirrel"
   orm "github.com/astaxie/beego/orm"
   _ "github.com/go-sql-driver/mysql" // import your required driver
+  "strconv"
 )
 
 type IModels interface {
@@ -196,7 +197,8 @@ func (m *Models) Delete(id string) (isError bool) {
 func (m *Models) Count() (count int, isError bool) {
   Db := m.GetDb()
   result := []orm.Params{}
-  sqlCount := "SELECT COUNT(" + m.pkColumn.Name + ") AS id FROM " + m.GetTableName()
+  PkColumn := m.GetPkColumn()
+  sqlCount := "SELECT COUNT(" + PkColumn.Name + ") AS id FROM " + m.GetTableName()
 
   _, err := Db.Raw(sqlCount).Values(&result)
 
@@ -205,7 +207,8 @@ func (m *Models) Count() (count int, isError bool) {
     isError = true
     count = 0
   } else {
-    count = result[0]["id"].(int)
+    totalCount, _ := strconv.Atoi(result[0]["id"].(string))
+    count = totalCount
   }
 
   return count, isError
