@@ -37,19 +37,20 @@ func (c ApiMobil) Get(ctx *gin.Context) {
 	// hitung total halaman
 	totalPage := math.Ceil(float64(totalData) / float64(perPage))
 
-	// limit untuk query sql
-	var limit int = 10
+	// variabel penampung kondisi pengambilan data
+	condition := map[string]interface{}{}
 
 	// jika perpage diset ke 0, maka semua data akan diambil
-	if perPage == 0 {
-		page = 0
-	} else {
+	if perPage != 0 {
+		condition["LIMIT"] = perPage
 		if page > 1 {
-			limit = (page - 1) * perPage
+			condition["OFFSET"] = (page - 1) * perPage
+		} else {
+			condition["OFFSET"] = 0
 		}
 	}
 
-	var data, err = md.ModelMobil.GetMobil(limit, perPage)
+	var data, err = md.ModelMobil.GetMobil(condition)
 	if err == true {
 		c.HttpStatus = http.StatusInternalServerError
 		c.Messages = "Terjadi kesalahan dalam mengambil data"
