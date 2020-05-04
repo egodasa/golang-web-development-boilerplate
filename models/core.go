@@ -1,7 +1,7 @@
 package models
 
 import (
-	"fmt"
+	"log"
 	"strconv"
 
 	sqlQb "github.com/Masterminds/squirrel"
@@ -14,12 +14,18 @@ type IModels interface {
 	GetPkColumn() Column
 	GetColumnList() map[string]Column
 	GetColumnListAsSql() []string
-	Get() ([]orm.Params, bool)
-	Find(string) ([]orm.Params, bool)
-	Insert(data map[string]string) (string, bool)
-	Update(string, map[string]string) bool
-	Delete(string) bool
+
+	All() ([]orm.Params, bool)
+	Find(string) (result orm.Params, isError bool)
 	Count() (int, bool)
+
+	Select(...string) *Models
+	Insert(data map[string]string) *Models
+	Update(string, map[string]string) *Models
+	Delete(string) *Models
+	Get() ([]orm.Params, bool)
+	First() (orm.Params, bool)
+	Run() bool
 }
 
 type Column struct {
@@ -28,12 +34,18 @@ type Column struct {
 	Fillable      bool
 	IsPk          bool
 	AutoIncrement bool
+	DefaultValue  interface{}
 }
 
 type Models struct {
-	tableName  string
-	pkColumn   Column
-	columnList map[string]Column
+	tableName     string
+	pkColumn      Column
+	columnList    map[string]Column
+	currentSql    sqlQb.Sqlizer
+	defaultSelect sqlQb.SelectBuilder
+	defaultInsert sqlQb.InsertBuilder
+	defaultUpdate sqlQb.UpdateBuilder
+	defaultDelete sqlQb.DeleteBuilder
 }
 
 func (m *Models) GetDb() orm.Ormer {
@@ -52,8 +64,12 @@ func NewModels(tableName string, tableStruct map[string]Column) *Models {
 	}
 
 	return &Models{
-		tableName:  tableName,
-		columnList: tableStruct,
+		tableName:     tableName,
+		columnList:    tableStruct,
+		defaultSelect: sqlQb.Select("*").From(tableName),
+		defaultInsert: sqlQb.Insert(tableName),
+		defaultUpdate: sqlQb.Update(tableName),
+		defaultDelete: sqlQb.Delete(tableName),
 	}
 }
 
@@ -81,113 +97,18 @@ func (m *Models) GetColumnListAsSql() (column []string) {
 	return column
 }
 
-func (m *Models) Get() (result []orm.Params, isError bool) {
-	Db := m.GetDb()
-	columnList := m.GetColumnListAsSql()
-	sql, args, _ := sqlQb.Select(columnList...).From(m.tableName).ToSql()
-	_, err := Db.Raw(sql, args).Values(&result)
-
-	if err != nil {
-		fmt.Println(err.Error())
-		isError = true
-	}
-
-	return result, isError
+func (m *Models) All() ([]orm.Params, bool) {
+	m.currentSql = m.defaultSelect
+	return m.Get()
 }
 
-func (m *Models) Find(id string) (result []orm.Params, isError bool) {
-	Db := m.GetDb()
-	PkColumn := m.GetPkColumn()
-	ColumnList := m.GetColumnListAsSql()
-	sql, args, _ := sqlQb.Select(ColumnList...).From(m.tableName).Where(sqlQb.Eq{PkColumn.Name: id}).ToSql()
-	_, err := Db.Raw(sql, args).Values(&result)
-
-	if err != nil {
-		fmt.Println(err.Error())
-		isError = true
-	}
-
-	return result, isError
+func (m *Models) Find(id string) (result orm.Params, isError bool) {
+	m.currentSql = m.defaultSelect.Where(sqlQb.Eq{m.GetPkColumn().Name: id}).Limit(1)
+	return m.First()
 }
 
-func (m *Models) Insert(data map[string]string) (lastId string, isError bool) {
-	Db := m.GetDb()
-	PkColumn := m.GetPkColumn()
-	sqlInsert := sqlQb.Insert(m.GetTableName())
-	for key, value := range m.columnList {
-		if value.Fillable == true && data[value.Name] != "" {
-			sqlInsert = sqlInsert.Values(key, data[value.Name])
-		}
-	}
-
-	sql, args, _ := sqlInsert.ToSql()
-
-	_, err := Db.Raw(sql, args).Exec()
-
-	if err != nil {
-		fmt.Println(err.Error())
-		lastId = "0"
-		isError = true
-	} else {
-		if PkColumn.AutoIncrement == true {
-			result := []orm.Params{}
-			_, err := Db.Raw("SELECT LAST_INSERT_ID() AS id").Values(&result)
-			if err != nil {
-				fmt.Println(err.Error())
-				lastId = "0"
-				isError = true
-			} else {
-				lastId = result[0]["id"].(string)
-			}
-		} else {
-			lastId = data[PkColumn.Name]
-		}
-	}
-	return lastId, isError
-}
-
-func (m *Models) Update(id string, data map[string]string) (isError bool) {
-	Db := m.GetDb()
-	PkColumn := m.GetPkColumn()
-
-	sqlUpdate := sqlQb.Update(m.GetTableName())
-
-	for _, value := range m.columnList {
-		if value.Fillable == true && data[value.Name] != "" {
-			sqlUpdate = sqlUpdate.Set(value.Name, data[value.Name])
-		}
-	}
-
-	sqlUpdate = sqlUpdate.Where(sqlQb.Eq{PkColumn.Name: id})
-
-	sql, args, _ := sqlUpdate.ToSql()
-
-	_, err := Db.Raw(sql, args).Exec()
-
-	if err != nil {
-		fmt.Println(err.Error())
-		isError = true
-	}
-
-	return isError
-}
-
-func (m *Models) Delete(id string) (isError bool) {
-	Db := m.GetDb()
-	PkColumn := m.GetPkColumn()
-
-	sql, args, _ := sqlQb.Delete(m.GetTableName()).Where(sqlQb.Eq{PkColumn.Name: id}).ToSql()
-
-	_, err := Db.Raw(sql, args).Exec()
-
-	if err != nil {
-		fmt.Println(err.Error())
-		isError = true
-	}
-
-	return isError
-}
-
+// Count method untuk menghitung banyak seluruh record pada sebuah models \n
+// Hasil return berupa banyak record integer serta error bool
 func (m *Models) Count() (count int, isError bool) {
 	Db := m.GetDb()
 	result := []orm.Params{}
@@ -197,7 +118,7 @@ func (m *Models) Count() (count int, isError bool) {
 	_, err := Db.Raw(sqlCount).Values(&result)
 
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 		isError = true
 		count = 0
 	} else {
@@ -206,4 +127,86 @@ func (m *Models) Count() (count int, isError bool) {
 	}
 
 	return count, isError
+}
+
+func (m *Models) Select(columns ...string) *Models {
+	if len(columns) != 0 {
+		m.currentSql = sqlQb.Select(columns...).From(m.GetTableName())
+	} else {
+		m.currentSql = m.defaultSelect
+	}
+	return m
+}
+
+func (m *Models) Insert(data map[string]string) *Models {
+	for key, value := range m.columnList {
+		if value.Fillable == true && data[value.Name] != "" {
+			m.defaultInsert = m.defaultInsert.Values(key, data[value.Name])
+		} else {
+			if value.DefaultValue != nil {
+				m.defaultInsert = m.defaultInsert.Values(key, value.DefaultValue)
+			}
+		}
+	}
+	m.currentSql = m.defaultInsert
+	return m
+}
+
+func (m *Models) Update(id string, data map[string]string) *Models {
+	for _, value := range m.columnList {
+		if value.Fillable == true && data[value.Name] != "" {
+			m.defaultUpdate = m.defaultUpdate.Set(value.Name, data[value.Name])
+		}
+	}
+	m.currentSql = m.defaultUpdate.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
+	return m
+}
+
+func (m *Models) Delete(id string) *Models {
+	m.currentSql = m.defaultDelete.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
+	return m
+}
+
+// Get untuk menjalankan select data
+// hasil return berupa []map[string]interface{} dan error
+func (m *Models) Get() (result []orm.Params, isError bool) {
+	Db := m.GetDb()
+	sql, args, _ := m.currentSql.ToSql()
+	_, err := Db.Raw(sql, args...).Values(&result)
+	if err != nil {
+		log.Println(err.Error())
+		isError = true
+	}
+	return result, isError
+}
+
+// First mengambil satu data dari hasil select
+// hasil return berupa map[string]interface{}
+func (m *Models) First() (result orm.Params, isError bool) {
+	Db := m.GetDb()
+	resultTmp := []orm.Params{}
+	sql, args, _ := m.currentSql.ToSql()
+	_, err := Db.Raw(sql, args...).Values(&resultTmp)
+	if err != nil {
+		log.Println(err.Error())
+		isError = true
+	} else {
+		if len(resultTmp) != 0 {
+			result = resultTmp[0]
+		}
+	}
+	return result, isError
+}
+
+// Run method untuk menjalankan insert, update dan delete
+// Hasil return berupa error
+func (m *Models) Run() (isError bool) {
+	sql, args, _ := m.currentSql.ToSql()
+	_, err := m.GetDb().Raw(sql, args).Exec()
+
+	if err != nil {
+		log.Println(err.Error())
+		isError = true
+	}
+	return isError
 }
