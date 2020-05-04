@@ -15,7 +15,7 @@ type CoreApi struct {
 }
 
 func (c CoreApi) Get(ctx *gin.Context) {
-	var data, err = c.ApiModels.Get()
+	var data, err = c.ApiModels.All()
 	if err == true {
 		c.HttpStatus = http.StatusInternalServerError
 		c.Messages = "Terjadi kesalahan dalam mengambil data"
@@ -52,15 +52,11 @@ func (c CoreApi) Insert(ctx *gin.Context) {
 	}
 
 	// proses insert
-	var id, err = c.ApiModels.Insert(data)
+	err := c.ApiModels.Insert(data).Run()
 
 	if err == true {
 		c.HttpStatus = http.StatusInternalServerError
 		c.Messages = "Terjadi kesalahan saat menambahkan data"
-	} else {
-		data := make(map[string]string)
-		data["id"] = id
-		c.Data = data
 	}
 
 	ctx.JSON(c.HttpStatus, c)
@@ -81,7 +77,7 @@ func (c CoreApi) Update(ctx *gin.Context) {
 	}
 
 	// proses insert
-	err := c.ApiModels.Update(id, data)
+	err := c.ApiModels.Update(id, data).Run()
 
 	if err == true {
 		c.HttpStatus = http.StatusInternalServerError
@@ -103,7 +99,7 @@ func (c CoreApi) Delete(ctx *gin.Context) {
 			c.Messages = "Data tidak ditemukan"
 		} else {
 			// proses insert
-			err = c.ApiModels.Delete(id)
+			err = c.ApiModels.Delete(id).Run()
 
 			if err == true {
 				c.HttpStatus = http.StatusInternalServerError
