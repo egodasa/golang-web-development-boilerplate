@@ -4,6 +4,10 @@ package models
 Select data :
 Models.Select().Get()
 Models.Select().Where(sqlQb.Eq{"kolom1": 123}).Get()
+Models.Select().Where(sqlQb.Eq{"kolom1": 123}).OrderBy("kolom1 ASC").Get()
+Models.Select().Where(sqlQb.Eq{"kolom1": 123}).Having(sqlQb.Eq{"kolom1": 123}).OrderBy("kolom1 ASC").Get()
+Models.Select("tabel1.*", "tabel2.nm_jenis").Join("tabel2", "tabel1.id_tabel1 = tabel2.id_tabel2").Get()
+
 
 Insert Data :
 Models.SetValue("kolom1", "data 1")
@@ -39,6 +43,9 @@ type IModels interface {
 	Count() (int, bool)
 
 	Select(...string) *Models
+	LeftJoin(string, string) *Models
+	Join(string, string) *Models
+	RightJoin(string, string) *Models
 	OrderBy(...string) *Models
 	GroupBy(...string) *Models
 	Having(interface{}) *Models
@@ -193,6 +200,24 @@ func (m *Models) Delete(id string) bool {
 	m.defaultDelete = m.defaultDelete.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
 	m.currentSqlType = "DELETE"
 	return m.Run()
+}
+
+func (m *Models) LeftJoin(table string, relation string) *Models {
+	m.defaultSelect = m.defaultSelect.LeftJoin(table + " ON " + relation)
+	m.currentSqlType = "SELECT"
+	return m
+}
+
+func (m *Models) Join(table string, relation string) *Models {
+	m.defaultSelect = m.defaultSelect.Join(table + " ON " + relation)
+	m.currentSqlType = "SELECT"
+	return m
+}
+
+func (m *Models) RightJoin(table string, relation string) *Models {
+	m.defaultSelect = m.defaultSelect.RightJoin(table + " ON " + relation)
+	m.currentSqlType = "SELECT"
+	return m
 }
 
 func (m *Models) OrderBy(columns ...string) *Models {
