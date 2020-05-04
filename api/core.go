@@ -40,19 +40,19 @@ func (c CoreApi) Find(ctx *gin.Context) {
 }
 
 func (c CoreApi) Insert(ctx *gin.Context) {
-	data := make(map[string]string)
 
 	// data yang dimasukkan hanyalah data yang sudah ditentukan di ColumnList
 	// serta data yang ada nilainya
 	columnList := c.ApiModels.GetColumnList()
 	for _, value := range columnList {
 		if ctx.PostForm(value.Name) != "" {
-			data[value.Name] = string(ctx.PostForm(value.Name))
+			// set value untuk insert data
+			c.ApiModels.SetValue(value.Name, string(ctx.PostForm(value.Name)))
 		}
 	}
 
-	// proses insert
-	err := c.ApiModels.Insert(data).Run()
+	// jalankan proses insert
+	err := c.ApiModels.Insert()
 
 	if err == true {
 		c.HttpStatus = http.StatusInternalServerError
@@ -63,21 +63,18 @@ func (c CoreApi) Insert(ctx *gin.Context) {
 }
 
 func (c CoreApi) Update(ctx *gin.Context) {
-	var id string = ctx.Param("id")
-
-	data := make(map[string]string)
-
 	// data yang dimasukkan hanyalah data yang sudah ditentukan di ColumnList
 	// serta data yang ada nilainya
 	columnList := c.ApiModels.GetColumnList()
 	for _, value := range columnList {
 		if ctx.PostForm(value.Name) != "" {
-			data[value.Name] = ctx.PostForm(value.Name)
+			// set data untuk update data
+			c.ApiModels.SetValue(value.Name, ctx.PostForm(value.Name))
 		}
 	}
 
 	// proses insert
-	err := c.ApiModels.Update(id, data).Run()
+	err := c.ApiModels.Update(ctx.Param("id"))
 
 	if err == true {
 		c.HttpStatus = http.StatusInternalServerError
@@ -99,7 +96,7 @@ func (c CoreApi) Delete(ctx *gin.Context) {
 			c.Messages = "Data tidak ditemukan"
 		} else {
 			// proses insert
-			err = c.ApiModels.Delete(id).Run()
+			err = c.ApiModels.Delete(id)
 
 			if err == true {
 				c.HttpStatus = http.StatusInternalServerError
