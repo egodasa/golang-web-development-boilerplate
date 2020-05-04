@@ -1,5 +1,24 @@
 package models
 
+/*
+Select data :
+Models.Select().Get()
+Models.Select().Where(sqlQb.Eq{"kolom1": 123}).Get()
+
+Insert Data :
+Models.SetValue("kolom1", "data 1")
+Models.SetValue("Kolom2", 2)
+Models.Insert()
+
+Update Data :
+Models.SetValue("kolom1", "data 1")
+Models.SetValue("Kolom2", 2)
+Models.Where(sqlQb.Eq{"kolom1": 123}).Update(1)
+
+Delete Data :
+Models.Delete(1)
+*/
+
 import (
 	"log"
 	"strconv"
@@ -20,12 +39,16 @@ type IModels interface {
 	Count() (int, bool)
 
 	Select(...string) *Models
-	Insert(data map[string]string) *Models
-	Update(string, map[string]string) *Models
-	Delete(string) *Models
+	OrderBy(...string) *Models
+	GroupBy(...string) *Models
+	Having(interface{}) *Models
 	Where(interface{}) *Models
 	Get() ([]orm.Params, bool)
 	First() (orm.Params, bool)
+	SetValue(column string, data interface{})
+	Insert() bool
+	Update(string) bool
+	Delete(string) bool
 	Run() bool
 }
 
@@ -46,6 +69,7 @@ type Models struct {
 	defaultInsert  sqlQb.InsertBuilder
 	defaultUpdate  sqlQb.UpdateBuilder
 	defaultDelete  sqlQb.DeleteBuilder
+	Data           map[string]interface{}
 	currentSqlType string
 }
 
@@ -71,6 +95,7 @@ func NewModels(tableName string, tableStruct map[string]Column) *Models {
 		defaultInsert: sqlQb.Insert(tableName),
 		defaultUpdate: sqlQb.Update(tableName),
 		defaultDelete: sqlQb.Delete(tableName),
+		Data:          map[string]interface{}{},
 	}
 }
 
@@ -146,34 +171,45 @@ func (m *Models) Select(columns ...string) *Models {
 	return m
 }
 
-func (m *Models) Insert(data map[string]string) *Models {
-	for key, value := range m.columnList {
-		if value.Fillable == true && data[value.Name] != "" {
-			m.defaultInsert = m.defaultInsert.Values(key, data[value.Name])
-		} else {
-			if value.DefaultValue != nil {
-				m.defaultInsert = m.defaultInsert.Values(key, value.DefaultValue)
-			}
-		}
+// Save untuk menjalankan query insert dan update
+func (m *Models) Insert() bool {
+	for keys, value := range m.Data {
+		m.defaultInsert = m.defaultInsert.Values(keys, value)
 	}
 	m.currentSqlType = "INSERT"
-	return m
+	return m.Run()
 }
 
-func (m *Models) Update(id string, data map[string]string) *Models {
-	for _, value := range m.columnList {
-		if value.Fillable == true && data[value.Name] != "" {
-			m.defaultUpdate = m.defaultUpdate.Set(value.Name, data[value.Name])
-		}
+func (m *Models) Update(id string) bool {
+	for keys, value := range m.Data {
+		m.defaultUpdate = m.defaultUpdate.Set(keys, value)
 	}
 	m.defaultUpdate = m.defaultUpdate.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
 	m.currentSqlType = "UPDATE"
+	return m.Run()
+}
+
+func (m *Models) Delete(id string) bool {
+	m.defaultDelete = m.defaultDelete.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
+	m.currentSqlType = "DELETE"
+	return m.Run()
+}
+
+func (m *Models) OrderBy(columns ...string) *Models {
+	m.defaultSelect = m.defaultSelect.OrderBy(columns...)
+	m.currentSqlType = "SELECT"
 	return m
 }
 
-func (m *Models) Delete(id string) *Models {
-	m.defaultDelete = m.defaultDelete.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
-	m.currentSqlType = "DELETE"
+func (m *Models) GroupBy(columns ...string) *Models {
+	m.defaultSelect = m.defaultSelect.GroupBy(columns...)
+	m.currentSqlType = "SELECT"
+	return m
+}
+
+func (m *Models) Having(condition interface{}) *Models {
+	m.defaultSelect = m.defaultSelect.Having(condition)
+	m.currentSqlType = "SELECT"
 	return m
 }
 
@@ -187,6 +223,14 @@ func (m *Models) Where(condition interface{}) *Models {
 		m.defaultDelete = m.defaultDelete.Where(condition)
 	}
 	return m
+}
+
+func (m *Models) SetValue(column string, val interface{}) {
+	for _, value := range m.columnList {
+		if value.Fillable == true {
+			m.Data[column] = val
+		}
+	}
 }
 
 // Get untuk menjalankan select data
@@ -224,7 +268,7 @@ func (m *Models) First() (result orm.Params, isError bool) {
 	return result, isError
 }
 
-// Run method untuk menjalankan insert, update dan delete
+// Run method untuk menjalankan delete
 // Hasil return berupa error
 func (m *Models) Run() (isError bool) {
 	var sql string
@@ -248,5 +292,6 @@ func (m *Models) Run() (isError bool) {
 	}
 
 	m.ResetDefaultQuery()
+	m.Data = map[string]interface{}{}
 	return isError
 }
