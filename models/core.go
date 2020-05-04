@@ -23,6 +23,7 @@ type IModels interface {
 	Insert(data map[string]string) *Models
 	Update(string, map[string]string) *Models
 	Delete(string) *Models
+	Where(interface{}) *Models
 	Get() ([]orm.Params, bool)
 	First() (orm.Params, bool)
 	Run() bool
@@ -38,14 +39,14 @@ type Column struct {
 }
 
 type Models struct {
-	tableName     string
-	pkColumn      Column
-	columnList    map[string]Column
-	currentSql    sqlQb.Sqlizer
-	defaultSelect sqlQb.SelectBuilder
-	defaultInsert sqlQb.InsertBuilder
-	defaultUpdate sqlQb.UpdateBuilder
-	defaultDelete sqlQb.DeleteBuilder
+	tableName      string
+	pkColumn       Column
+	columnList     map[string]Column
+	defaultSelect  sqlQb.SelectBuilder
+	defaultInsert  sqlQb.InsertBuilder
+	defaultUpdate  sqlQb.UpdateBuilder
+	defaultDelete  sqlQb.DeleteBuilder
+	currentSqlType string
 }
 
 func (m *Models) GetDb() orm.Ormer {
@@ -97,13 +98,21 @@ func (m *Models) GetColumnListAsSql() (column []string) {
 	return column
 }
 
+func (m *Models) ResetDefaultQuery() {
+	m.defaultSelect = sqlQb.Select("*").From(m.GetTableName())
+	m.defaultInsert = sqlQb.Insert(m.GetTableName())
+	m.defaultUpdate = sqlQb.Update(m.GetTableName())
+	m.defaultDelete = sqlQb.Delete(m.GetTableName())
+}
+
 func (m *Models) All() ([]orm.Params, bool) {
-	m.currentSql = m.defaultSelect
+	m.currentSqlType = "SELECT"
 	return m.Get()
 }
 
 func (m *Models) Find(id string) (result orm.Params, isError bool) {
-	m.currentSql = m.defaultSelect.Where(sqlQb.Eq{m.GetPkColumn().Name: id}).Limit(1)
+	m.defaultSelect = m.defaultSelect.Where(sqlQb.Eq{m.GetPkColumn().Name: id}).Limit(1)
+	m.currentSqlType = "SELECT"
 	return m.First()
 }
 
@@ -131,10 +140,9 @@ func (m *Models) Count() (count int, isError bool) {
 
 func (m *Models) Select(columns ...string) *Models {
 	if len(columns) != 0 {
-		m.currentSql = sqlQb.Select(columns...).From(m.GetTableName())
-	} else {
-		m.currentSql = m.defaultSelect
+		m.defaultSelect = sqlQb.Select(columns...).From(m.GetTableName())
 	}
+	m.currentSqlType = "SELECT"
 	return m
 }
 
@@ -148,7 +156,7 @@ func (m *Models) Insert(data map[string]string) *Models {
 			}
 		}
 	}
-	m.currentSql = m.defaultInsert
+	m.currentSqlType = "INSERT"
 	return m
 }
 
@@ -158,12 +166,26 @@ func (m *Models) Update(id string, data map[string]string) *Models {
 			m.defaultUpdate = m.defaultUpdate.Set(value.Name, data[value.Name])
 		}
 	}
-	m.currentSql = m.defaultUpdate.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
+	m.defaultUpdate = m.defaultUpdate.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
+	m.currentSqlType = "UPDATE"
 	return m
 }
 
 func (m *Models) Delete(id string) *Models {
-	m.currentSql = m.defaultDelete.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
+	m.defaultDelete = m.defaultDelete.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
+	m.currentSqlType = "DELETE"
+	return m
+}
+
+func (m *Models) Where(condition interface{}) *Models {
+	switch m.currentSqlType {
+	case "SELECT":
+		m.defaultSelect = m.defaultSelect.Where(condition)
+	case "UPDATE":
+		m.defaultUpdate = m.defaultUpdate.Where(condition)
+	case "DELETE":
+		m.defaultDelete = m.defaultDelete.Where(condition)
+	}
 	return m
 }
 
@@ -171,12 +193,14 @@ func (m *Models) Delete(id string) *Models {
 // hasil return berupa []map[string]interface{} dan error
 func (m *Models) Get() (result []orm.Params, isError bool) {
 	Db := m.GetDb()
-	sql, args, _ := m.currentSql.ToSql()
+	sql, args, _ := m.defaultSelect.ToSql()
 	_, err := Db.Raw(sql, args...).Values(&result)
 	if err != nil {
 		log.Println(err.Error())
 		isError = true
 	}
+
+	m.ResetDefaultQuery()
 	return result, isError
 }
 
@@ -185,7 +209,7 @@ func (m *Models) Get() (result []orm.Params, isError bool) {
 func (m *Models) First() (result orm.Params, isError bool) {
 	Db := m.GetDb()
 	resultTmp := []orm.Params{}
-	sql, args, _ := m.currentSql.ToSql()
+	sql, args, _ := m.defaultSelect.Limit(1).ToSql()
 	_, err := Db.Raw(sql, args...).Values(&resultTmp)
 	if err != nil {
 		log.Println(err.Error())
@@ -195,18 +219,34 @@ func (m *Models) First() (result orm.Params, isError bool) {
 			result = resultTmp[0]
 		}
 	}
+
+	m.ResetDefaultQuery()
 	return result, isError
 }
 
 // Run method untuk menjalankan insert, update dan delete
 // Hasil return berupa error
 func (m *Models) Run() (isError bool) {
-	sql, args, _ := m.currentSql.ToSql()
+	var sql string
+	var args []interface{}
+
+	switch m.currentSqlType {
+	case "SELECT":
+		sql, args, _ = m.defaultSelect.ToSql()
+	case "INSERT":
+		sql, args, _ = m.defaultInsert.ToSql()
+	case "UPDATE":
+		sql, args, _ = m.defaultUpdate.ToSql()
+	case "DELETE":
+		sql, args, _ = m.defaultDelete.ToSql()
+	}
 	_, err := m.GetDb().Raw(sql, args).Exec()
 
 	if err != nil {
 		log.Println(err.Error())
 		isError = true
 	}
+
+	m.ResetDefaultQuery()
 	return isError
 }
