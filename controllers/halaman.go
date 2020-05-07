@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"bytes"
+	views "golang-web-development/views/dist"
 	http "net/http"
 
 	gin "github.com/gin-gonic/gin"
@@ -12,24 +14,16 @@ var Halaman = CoreController{
 }
 
 func (c CoreController) Beranda(ctx *gin.Context) {
-	var data string = "Ini halaman beranda"
-	ctx.String(c.HttpStatus, data)
+	buffer := new(bytes.Buffer)
+	views.Beranda(buffer)
+
+	c.ViewHTML(ctx, c.HttpStatus, buffer.Bytes())
 }
 
 func (c CoreController) Login(ctx *gin.Context) {
-	var data string = `
-            <h1>Ini halaman login</h1>
-            <form method="POST" action="">
-              <label>Username</label><br>
-              <input type="text" name="username" /><br>
-              
-              <label>Password</label><br>
-              <input type="password" name="password" /><br>
-              
-              <button type="submit">Login</button>
-            </form>
-          `
-	ctx.HTML(c.HttpStatus, data, nil)
+	buffer := new(bytes.Buffer)
+	views.Login(buffer)
+	c.ViewHTML(ctx, c.HttpStatus, buffer.Bytes())
 }
 
 func (c CoreController) ProsesLogin(ctx *gin.Context) {

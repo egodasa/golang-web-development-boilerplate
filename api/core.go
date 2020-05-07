@@ -1,7 +1,7 @@
 package api
 
 import (
-	md "belajar-ech0-framework/models"
+	md "golang-web-development/models"
 	http "net/http"
 
 	gin "github.com/gin-gonic/gin"

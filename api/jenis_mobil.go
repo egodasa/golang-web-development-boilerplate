@@ -1,19 +1,19 @@
 package api
 
 import (
-    md "belajar-ech0-framework/models"
-    "net/http"
-    
-    gin "github.com/gin-gonic/gin"
+	md "golang-web-development/models"
+	"net/http"
+
+	gin "github.com/gin-gonic/gin"
 )
 
 // vairabel ini akan dipakai di route
 type ApiJenisMobil struct {
-  *CoreApi
+	*CoreApi
 }
 
 func (c ApiJenisMobil) Cari(ctx *gin.Context) {
-  modelMobil := md.ModelJenisMobil
+	modelMobil := md.ModelJenisMobil
 	var id string = ctx.Param("cari")
 	var data, err = modelMobil.Cari(id)
 
@@ -28,10 +28,7 @@ func (c ApiJenisMobil) Cari(ctx *gin.Context) {
 }
 
 var JenisMobil ApiJenisMobil = ApiJenisMobil{&CoreApi{
-  HttpStatus: http.StatusOK,
-  Messages: "Ok",
-  ApiModels: md.ModelJenisMobil,
+	HttpStatus: http.StatusOK,
+	Messages:   "Ok",
+	ApiModels:  md.ModelJenisMobil,
 }}
-
-
-

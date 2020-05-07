@@ -1,11 +1,12 @@
 package api
 
 import (
-	md "belajar-ech0-framework/models"
+	md "golang-web-development/models"
 	"math"
 	"net/http"
-
 	"strconv"
+
+	sqlQb "github.com/Masterminds/squirrel"
 
 	gin "github.com/gin-gonic/gin"
 )
@@ -15,7 +16,7 @@ type ApiMobil struct {
 	*CoreApi
 }
 
-func (c ApiMobil) Get(ctx *gin.Context) {
+func (c *ApiMobil) Get(ctx *gin.Context) {
 
 	// set limit dan offset untuk paginasi data
 	page, errPage := strconv.Atoi(ctx.DefaultQuery("page", "1"))
@@ -63,6 +64,16 @@ func (c ApiMobil) Get(ctx *gin.Context) {
 			"total_data":   totalData,
 		}
 	}
+	ctx.JSON(c.HttpStatus, c)
+}
+
+func (c *ApiMobil) CobaMobil(ctx *gin.Context) {
+
+	dataMobil := md.ModelMobil.Select()
+	dataMobil = dataMobil.Where(sqlQb.Or{sqlQb.Eq{"id_mobil": "3"}, sqlQb.Eq{"id_jenis": "1"}})
+
+	c.Data, _ = dataMobil.Get()
+
 	ctx.JSON(c.HttpStatus, c)
 }
 

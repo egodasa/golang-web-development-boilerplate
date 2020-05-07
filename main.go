@@ -1,8 +1,8 @@
 package main
 
 import (
-	config "belajar-ech0-framework/config"
-	routes "belajar-ech0-framework/routes"
+	config "golang-web-development/config"
+	routes "golang-web-development/routes"
 	os "os"
 
 	orm "github.com/astaxie/beego/orm"

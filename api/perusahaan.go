@@ -1,20 +1,17 @@
 package api
 
 import (
-    md "belajar-ech0-framework/models"
-    "net/http"
+	md "golang-web-development/models"
+	"net/http"
 )
 
 // vairabel ini akan dipakai di route
 type ApiPerusahaan struct {
-  *CoreApi
+	*CoreApi
 }
 
 var Perusahaan ApiPerusahaan = ApiPerusahaan{&CoreApi{
-  HttpStatus: http.StatusOK,
-  Messages: "Ok",
-  ApiModels: md.ModelPerusahaan,
+	HttpStatus: http.StatusOK,
+	Messages:   "Ok",
+	ApiModels:  md.ModelPerusahaan,
 }}
-
-
-

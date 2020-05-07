@@ -1,17 +1,21 @@
 package routes
 
 import (
-	api "belajar-ech0-framework/api"
-	controllers "belajar-ech0-framework/controllers"
-	middleware "belajar-ech0-framework/middleware"
+	api "golang-web-development/api"
+	controllers "golang-web-development/controllers"
 
-	// mdl "belajar-ech0-framework/middleware"
+	// mdl "golang-web-development/middleware"
 
 	gin "github.com/gin-gonic/gin"
 )
 
 func Router() *gin.Engine {
 	var route *gin.Engine = gin.Default()
+
+	// untuk menentukan file statis seperti css, js dll
+	// gunakan baris ini jika tidak ingin menggunakan
+	// web server pihak ketiga seperti nginx, apache dll
+	route.Static("/assets", "./views/assets")
 
 	route.GET("/", controllers.Halaman.Beranda)
 	route.GET("/login", controllers.Halaman.Login)
@@ -23,7 +27,9 @@ func Router() *gin.Engine {
 		apiRoutes.GET("/cek/token", api.Auth.CekToken)
 		apiRoutes.POST("/login", api.Auth.CekLogin)
 
-		apiRoutes.Use(middleware.ValidasiTokenJwt) // hapus midlleware ini untuk mematikan JWT
+		apiRoutes.GET("/mobilcoba", api.Mobil.CobaMobil)
+
+		// apiRoutes.Use(middleware.ValidasiTokenJwt) // hapus midlleware ini untuk mematikan JWT
 		apiRoutes.GET("/mobil", api.Mobil.Get)
 		apiRoutes.GET("/mobil/:id", api.Mobil.Find)
 		apiRoutes.POST("/mobil", api.Mobil.Insert)
