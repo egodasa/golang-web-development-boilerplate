@@ -5,6 +5,7 @@
 1. Kingpin (https://github.com/alecthomas/kingpin), untuk membaca argument/flag pada CLI
 1. Beego (https://github.com/astaxie/beego/), untuk ORM (Hanya ORM nya saja. Karena Beego adalah framework full)
 1. Squirrel (https://github.com/Masterminds/squirrel), untuk Query Builder 
+1. Hero (https://github.com/shiyanhui/hero), untuk template engine
 
 # Struktur file/folder
 | File/Folder | Kegunaan |
@@ -15,7 +16,7 @@
 | `controller/core.go` | File yang berisi struct yang akan digunakan untuk semua controller. Semacam variabel/method global untuk semua controller |
 | `models/` | Folder yang berisi model. |
 | `models/core.go` | File yang berisi kode untuk mempermudah proses pembuatan model |
-| `views/` (WIP) | Folder yang berisi file views format .HTML |
+| `views/` | Folder yang berisi file views format .HTML |
 | `websockets/` (WIP) | Folder yang berisi method untuk websockets. Agar nanti bisa digunakan di controller dll |
 | `.env` | File yang berisi pengaturan aplikasi |
 | helper/ | Kumpulan kode yang berisi kumpulan fungsi untuk mempermudah beberapa task |
