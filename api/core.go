@@ -43,10 +43,10 @@ func (c CoreApi) Insert(ctx *gin.Context) {
 
 	// data yang dimasukkan hanyalah data yang sudah ditentukan di ColumnList
 	// serta data yang ada nilainya
-	columnList := c.ApiModels.GetColumnList()
+	columnList := c.ApiModels.GetColumnStructure()
 	for _, value := range columnList {
-		if ctx.PostForm(value.Name) != "" {
-			// set value untuk insert data
+		// check the data if it fillable or not and empty value or not
+		if ctx.PostForm(value.Name) != "" && value.Fillable == true {
 			c.ApiModels.SetValue(value.Name, string(ctx.PostForm(value.Name)))
 		}
 	}
@@ -65,9 +65,9 @@ func (c CoreApi) Insert(ctx *gin.Context) {
 func (c CoreApi) Update(ctx *gin.Context) {
 	// data yang dimasukkan hanyalah data yang sudah ditentukan di ColumnList
 	// serta data yang ada nilainya
-	columnList := c.ApiModels.GetColumnList()
+	columnList := c.ApiModels.GetColumnStructure()
 	for _, value := range columnList {
-		if ctx.PostForm(value.Name) != "" {
+		if ctx.PostForm(value.Name) != "" && value.Fillable == true {
 			// set data untuk update data
 			c.ApiModels.SetValue(value.Name, ctx.PostForm(value.Name))
 		}

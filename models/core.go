@@ -25,18 +25,20 @@ Models.Delete(1)
 
 import (
 	"log"
+	"reflect"
 	"strconv"
 
 	sqlQb "github.com/Masterminds/squirrel"
 	orm "github.com/astaxie/beego/orm"
-	_ "github.com/go-sql-driver/mysql" // import your required driver
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type IModels interface {
+	GetDb() orm.Ormer
 	GetTableName() string
-	GetPkColumn() Column
-	GetColumnList() map[string]Column
-	GetColumnListAsSql() []string
+	GetPrimaryKey() string
+	GetColumnList() []string
+	GetColumnStructure() []Column
 
 	All() ([]orm.Params, bool)
 	Find(string) (result orm.Params, isError bool)
@@ -61,7 +63,7 @@ type IModels interface {
 
 type Column struct {
 	Name          string
-	Type          string
+	Type          reflect.Kind
 	Fillable      bool
 	IsPk          bool
 	AutoIncrement bool
@@ -70,8 +72,9 @@ type Column struct {
 
 type Models struct {
 	tableName      string
-	pkColumn       Column
-	columnList     map[string]Column
+	primaryKey     string
+	columnStruct   []Column
+	columnList     []string
 	defaultSelect  sqlQb.SelectBuilder
 	defaultInsert  sqlQb.InsertBuilder
 	defaultUpdate  sqlQb.UpdateBuilder
@@ -84,20 +87,25 @@ func (m *Models) GetDb() orm.Ormer {
 	return orm.NewOrm()
 }
 
-func NewModels(tableName string, tableStruct map[string]Column) *Models {
-	var banyakPk int
-	for _, value := range tableStruct {
-		if value.IsPk == true {
-			banyakPk += 1
-		}
-	}
-	if banyakPk != 1 {
-		panic("Primary Key berlebih atau belum diset!")
-	}
+func NewModels(tableName string, column []Column) *Models {
 
+	// Read column parameter to set column list and primary key
+	var primaryKey string
+	columnList := make([]string, len(column))
+	for index, value := range column {
+		// set the primary key for models based on array of column struct
+		if value.IsPk == true {
+			primaryKey = value.Name
+		}
+
+		// save all column name as array string
+		columnList[index] = value.Name
+	}
 	return &Models{
 		tableName:     tableName,
-		columnList:    tableStruct,
+		columnList:    columnList,
+		primaryKey:    primaryKey,
+		columnStruct:  column,
 		defaultSelect: sqlQb.Select("*").From(tableName),
 		defaultInsert: sqlQb.Insert(tableName),
 		defaultUpdate: sqlQb.Update(tableName),
@@ -110,24 +118,16 @@ func (m *Models) GetTableName() string {
 	return m.tableName
 }
 
-func (m *Models) GetPkColumn() (pkColumn Column) {
-	for index, value := range m.columnList {
-		if value.IsPk == true {
-			pkColumn = m.columnList[index]
-		}
-	}
-	return pkColumn
+func (m *Models) GetPrimaryKey() string {
+	return m.primaryKey
 }
 
-func (m *Models) GetColumnList() map[string]Column {
+func (m *Models) GetColumnList() []string {
 	return m.columnList
 }
 
-func (m *Models) GetColumnListAsSql() (column []string) {
-	for _, value := range m.columnList {
-		column = append(column, "`"+m.tableName+"`"+"."+"`"+value.Name+"`")
-	}
-	return column
+func (m *Models) GetColumnStructure() []Column {
+	return m.columnStruct
 }
 
 func (m *Models) ResetDefaultQuery() {
@@ -143,7 +143,7 @@ func (m *Models) All() ([]orm.Params, bool) {
 }
 
 func (m *Models) Find(id string) (result orm.Params, isError bool) {
-	m.defaultSelect = m.defaultSelect.Where(sqlQb.Eq{m.GetPkColumn().Name: id}).Limit(1)
+	m.defaultSelect = m.defaultSelect.Where(sqlQb.Eq{m.primaryKey: id}).Limit(1)
 	m.currentSqlType = "SELECT"
 	return m.First()
 }
@@ -153,8 +153,7 @@ func (m *Models) Find(id string) (result orm.Params, isError bool) {
 func (m *Models) Count() (count int, isError bool) {
 	Db := m.GetDb()
 	result := []orm.Params{}
-	PkColumn := m.GetPkColumn()
-	sqlCount := "SELECT COUNT(" + PkColumn.Name + ") AS id FROM " + m.GetTableName()
+	sqlCount := "SELECT COUNT(" + m.GetPrimaryKey() + ") AS id FROM " + m.GetTableName()
 
 	_, err := Db.Raw(sqlCount).Values(&result)
 
@@ -191,13 +190,13 @@ func (m *Models) Update(id string) bool {
 	for keys, value := range m.Data {
 		m.defaultUpdate = m.defaultUpdate.Set(keys, value)
 	}
-	m.defaultUpdate = m.defaultUpdate.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
+	m.defaultUpdate = m.defaultUpdate.Where(sqlQb.Eq{m.primaryKey: id})
 	m.currentSqlType = "UPDATE"
 	return m.Run()
 }
 
 func (m *Models) Delete(id string) bool {
-	m.defaultDelete = m.defaultDelete.Where(sqlQb.Eq{m.GetPkColumn().Name: id})
+	m.defaultDelete = m.defaultDelete.Where(sqlQb.Eq{m.primaryKey: id})
 	m.currentSqlType = "DELETE"
 	return m.Run()
 }
@@ -251,8 +250,9 @@ func (m *Models) Where(condition interface{}) *Models {
 }
 
 func (m *Models) SetValue(column string, val interface{}) {
-	for _, value := range m.columnList {
-		if value.Fillable == true {
+	// check if the column name are listed on column structure
+	for _, value := range m.columnStruct {
+		if value.Name == column && value.Fillable == true {
 			m.Data[column] = val
 		}
 	}
@@ -317,6 +317,7 @@ func (m *Models) Run() (isError bool) {
 	}
 
 	m.ResetDefaultQuery()
+	// reset data value, so it will be reuse for another insert or update
 	m.Data = map[string]interface{}{}
 	return isError
 }

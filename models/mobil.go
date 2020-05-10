@@ -3,49 +3,50 @@ package models
 import (
 	"fmt"
 	hpl "golang-web-development/helper"
+	"reflect"
 
 	orm "github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql" // import your required driver
 )
 
-// MobilColumn berisi struktur tabel tb_mobil
-// MobilColumn berguna untuk menggambarkan struktur tabel tb_mobil
-var MobilColumn = map[string]Column{
-	"id_mobil": Column{
+// Mobil berisi struktur tabel tb_mobil
+// Mobil berguna untuk menggambarkan struktur tabel tb_mobil
+var MobilColumn = []Column{
+	{
 		Name:          "id_mobil",
-		Type:          "int",
+		Type:          reflect.Int,
 		Fillable:      false,
 		IsPk:          true,
 		AutoIncrement: true,
 	},
-	"id_perusahaan": Column{
+	{
 		Name:     "id_perusahaan",
-		Type:     "int",
+		Type:     reflect.Int,
 		Fillable: true,
 	},
-	"nm_mobil": Column{
+	{
 		Name:     "nm_mobil",
-		Type:     "varchar",
+		Type:     reflect.String,
 		Fillable: true,
 	},
-	"jenis_penggerak": Column{
+	{
 		Name:     "jenis_penggerak",
-		Type:     "varchar",
+		Type:     reflect.String,
 		Fillable: true,
 	},
-	"banyak_roda": Column{
+	{
 		Name:     "banyak_roda",
-		Type:     "int",
+		Type:     reflect.Int,
 		Fillable: true,
 	},
-	"id_jenis": Column{
+	{
 		Name:     "id_jenis",
-		Type:     "int",
+		Type:     reflect.Int,
 		Fillable: true,
 	},
-	"harga": Column{
+	{
 		Name:     "harga",
-		Type:     "int",
+		Type:     reflect.Int,
 		Fillable: true,
 	},
 }
